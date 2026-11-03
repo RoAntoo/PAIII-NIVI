@@ -1,0 +1,12 @@
+model\TaskTest.class
+model\ProjectTest.class
+com\pa\proyecto\backend_integrator\ProjectTaskApiTest$FixedClockConfig.class
+usecase\UpdateTaskUseCaseTest.class
+usecase\ProjectQueriesUseCaseTest.class
+usecase\CreateProjectUseCaseTest.class
+usecase\UpdateProjectUseCaseTest.class
+com\pa\proyecto\backend_integrator\BackendIntegratorApplicationTests.class
+usecase\CreateTaskUseCaseTest.class
+usecase\TaskQueriesUseCaseTest.class
+com\pa\proyecto\backend_integrator\ProjectTaskApiTest.class
+usecase\FindAllProjectsUseCaseTest.class
