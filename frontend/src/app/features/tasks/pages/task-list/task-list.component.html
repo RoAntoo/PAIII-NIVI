@@ -1,0 +1,127 @@
+<div class="task-container">
+      <div class="header-section">
+        <h2><i class="bi bi-folder-check text-mint"></i> Tareas del Proyecto</h2>
+        <a class="btn-create" [routerLink]="['/projects', projectId, 'tasks', 'new']">
+          <i class="bi bi-plus-lg"></i> Nueva Tarea
+        </a>
+      </div>
+
+      <!-- Dashboard de Progreso -->
+      @if (!loading() && !error() && tasks().length > 0) {
+        <div class="dashboard-card">
+          <div class="progress-info">
+            <div class="progress-text">
+              <span class="progress-title"><i class="bi bi-activity text-mint"></i> Progreso del Proyecto</span>
+              <span class="progress-stats">
+                <strong>{{ completedTasks() }}</strong> de <strong>{{ totalTasks() }}</strong> completadas
+              </span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="progressPercentage()">
+                <span class="percentage-label">{{ progressPercentage() }}%</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="counters-grid">
+            <div class="counter-card todo-card">
+              <span class="counter-icon">📝</span>
+              <div class="counter-details">
+                <span class="counter-count">{{ todoCount() }}</span>
+                <span class="counter-label">Pendientes</span>
+              </div>
+            </div>
+            <div class="counter-card in-progress-card">
+              <span class="counter-icon">⚡</span>
+              <div class="counter-details">
+                <span class="counter-count">{{ inProgressCount() }}</span>
+                <span class="counter-label">En Progreso</span>
+              </div>
+            </div>
+            <div class="counter-card done-card">
+              <span class="counter-icon">✅</span>
+              <div class="counter-details">
+                <span class="counter-count">{{ doneCount() }}</span>
+                <span class="counter-label">Completadas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="filter-and-actions">
+        <div class="filter-section">
+          <label for="statusFilter" class="fw-semibold">
+            <i class="bi bi-funnel text-pink"></i> Filtrar por estado: 
+          </label>
+          <select id="statusFilter" (change)="onFilterChange($event)">
+            <option value="TODAS">Todas las tareas</option>
+            <option value="TODO">Pendiente</option>
+            <option value="IN_PROGRESS">En Progreso</option>
+            <option value="DONE">Completada</option>
+          </select>
+        </div>
+        <a class="btn-back" routerLink="/projects">
+          <i class="bi bi-arrow-left"></i> Volver a Proyectos
+        </a>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-container">
+          <div class="spinner"></div>
+          <p class="loading">Cargando tareas...</p>
+        </div>
+      }
+
+      @if (error()) {
+        <div class="error-card">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <p>{{ error() }}</p>
+        </div>
+      }
+
+      @if (!loading() && !error()) {
+        @if (filteredTasks().length > 0) {
+          <div class="task-grid">
+            @for (task of filteredTasks(); track task.id) {
+              <div class="task-card">
+                <div class="card-content">
+                  <div class="card-header-task">
+                    <h3>{{ task.title }}</h3>
+                    <span class="badge {{ task.status | lowercase }}">{{ task.status === 'TODO' ? 'Pendiente' : task.status === 'IN_PROGRESS' ? 'En Progreso' : 'Completada' }}</span>
+                  </div>
+                  <div class="task-info">
+                    <div class="info-item">
+                      <i class="bi bi-clock text-pink"></i>
+                      <span><strong>Estimación:</strong> {{ task.estimateHours }} hs</span>
+                    </div>
+                    <div class="info-item">
+                      <i class="bi bi-person text-mint"></i>
+                      <span><strong>Asignado:</strong> {{ task.assignee || 'Sin asignar' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <i class="bi bi-calendar-check text-muted"></i>
+                      <span><strong>Finalizado:</strong> {{ task.finishedAt ? task.finishedAt : 'En curso' }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <a class="btn-edit" [routerLink]="['/projects', projectId, 'tasks', task.id, 'edit']">
+                    <i class="bi bi-pencil-square"></i> Editar Tarea
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <i class="bi bi-clipboard-x text-pink"></i>
+            @if (tasks().length === 0) {
+              <p>Este proyecto aún no tiene tareas creadas.</p>
+            } @else {
+              <p>No hay tareas que coincidan con el estado seleccionado.</p>
+            }
+          </div>
+        }
+      }
+    </div>

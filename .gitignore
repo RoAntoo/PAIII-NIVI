@@ -42,3 +42,20 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Application build outputs
+**/node_modules/
+**/dist/
+**/.angular/
+**/out-tsc/
+**/coverage/
+**/target/
+**/*.log
+**/*.pid
+**/*.mv.db
+**/*.trace.db
+**/.env
+**/.env.*
+!**/.env.example
+
+**/target-audit/
