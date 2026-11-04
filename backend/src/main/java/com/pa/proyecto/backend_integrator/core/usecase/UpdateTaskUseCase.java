@@ -19,7 +19,9 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with ID " + id + " not found."));
 
-        if (dto.title() != null && !dto.title().isBlank()) {
+        if (dto.title() != null && dto.title().isBlank()) throw new IllegalArgumentException("Task title is required");
+        if (dto.estimateHours() != null && dto.estimateHours() <= 0) throw new BusinessRuleViolationException("Estimate hours must be greater than 0");
+        if (dto.title() != null) {
             existingTask.setTitle(dto.title());
         }
 
@@ -30,9 +32,7 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
             existingTask.setEstimateHours(dto.estimateHours());
         }
 
-        if (dto.assignee() != null) {
-            existingTask.setAssignee(dto.assignee());
-        }
+        existingTask.setAssignee(dto.assignee());
 
         return taskRepository.save(existingTask);
     }

@@ -1,8 +1,6 @@
 package com.pa.proyecto.backend_integrator.core.model;
 
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,32 +10,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Entity
-@Table(name = "projects")
 @Getter // Lombok crea todos los Getters
 @Setter // Lombok crea todos los Setters
 @NoArgsConstructor //Lombok crea un constructor vacío
 public class Project {
 
-    @Id // Marca este campo como la Primary Key
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Le dice a la BD que genere el ID auto
     private Long id;
-
-    @Column(nullable = false, unique = true)
     private String name;
 
     private LocalDate startDate;
     private LocalDate endDate;
-
-    @Enumerated(EnumType.STRING) // Guarda el Enum como "ACTIVE" en lugar de 0, 1, 2
     private ProjectStatus status;
 
     private String description;
 
     // Un Proyecto tiene muchas Tareas
     // mappedBy = "project" le dice a JPA: "La relacion la maneja el campo 'project' en la clase Task"
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties("project")
+
     private List<Task> tasks = new ArrayList<>();
 
 
@@ -55,6 +44,7 @@ public class Project {
     public static Project create(String name, LocalDate startDate, LocalDate endDate,
                                  ProjectStatus status, String description,
                                  LocalDate today) {
+        if (startDate == null || endDate == null || status == null) throw new IllegalArgumentException("Dates and status are required");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Project name is required");
         }

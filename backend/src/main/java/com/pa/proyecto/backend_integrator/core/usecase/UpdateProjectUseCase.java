@@ -30,7 +30,7 @@ public class UpdateProjectUseCase implements IUpdateProjectInput {
             if (projectRepository.existsByName(dto.name())) {
                 throw new DuplicateResourceException("Project with name '" + dto.name() + "' already exists.");
             }
-            existingProject.setName(dto.name());
+            // Apply changes only after validating the full update.
         }
 
         LocalDate finalStartDate = (dto.startDate() != null) ? dto.startDate() : existingProject.getStartDate();
@@ -40,6 +40,8 @@ public class UpdateProjectUseCase implements IUpdateProjectInput {
             throw new BusinessRuleViolationException("Project end date must be after start date.");
         }
 
+        if (dto.name() != null && dto.name().isBlank()) throw new IllegalArgumentException("Project name is required");
+        if (dto.name() != null) existingProject.setName(dto.name());
         if(dto.startDate() != null) existingProject.setStartDate(finalStartDate);
         if(dto.endDate() != null) existingProject.setEndDate(finalEndDate);
 
