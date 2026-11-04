@@ -7,22 +7,22 @@ import com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO;
 import com.pa.proyecto.backend_integrator.core.model.Task;
 import com.pa.proyecto.backend_integrator.core.output.ITaskRepository;
 
-/** Applies partial task updates and persists them through the repository. */
 public class UpdateTaskUseCase implements IUpdateTaskInput {
 
     private final ITaskRepository taskRepository;
-    /** Creates the use case with its task repository. */
     public UpdateTaskUseCase(ITaskRepository taskRepository){
         this.taskRepository = taskRepository;
     }
 
-    /** Preserves omitted assignees and clears explicitly null assignees before saving. */
     @Override
     public Task updateTask(Long id, UpdateTaskDTO dto) {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task with ID " + id + " not found."));
 
-        if (dto.title() != null && !dto.title().isBlank()) {
+        if (dto.title() != null) {
+            if (dto.title().isBlank()) {
+                throw new IllegalArgumentException("Task title is required");
+            }
             existingTask.setTitle(dto.title());
         }
 

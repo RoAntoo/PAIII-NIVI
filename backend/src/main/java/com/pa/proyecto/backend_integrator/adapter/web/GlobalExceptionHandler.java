@@ -16,6 +16,15 @@ import org.springframework.web.context.request.WebRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class, org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> malformed(Exception ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponse("Bad Request", "Invalid request data"));
+    }
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> integrity(Exception ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Conflict", "Data conflicts with an existing resource"));
+    }
+
 
     /**
      * Maneja ResourceNotFoundException -> 404 Not Found

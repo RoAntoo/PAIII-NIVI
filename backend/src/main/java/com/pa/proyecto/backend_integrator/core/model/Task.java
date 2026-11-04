@@ -63,6 +63,7 @@ public class Task {
     public static Task create(Project project, String title, Integer estimateHours,
                               String assignee, TaskStatus status, LocalDateTime createdAtTimestamp) {
 
+        if (status == null) throw new IllegalArgumentException("Task status is required");
         if (project == null) {
             throw new IllegalArgumentException("Project is required");
         }

@@ -1,7 +1,7 @@
 package com.pa.proyecto.backend_integrator.adapter.persistence;
 
 import com.pa.proyecto.backend_integrator.core.input.DTO.FindProjectsQueryDTO;
-import com.pa.proyecto.backend_integrator.core.model.Project;
+import com.pa.proyecto.backend_integrator.adapter.persistence.entity.ProjectEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +12,7 @@ import java.util.List;
 @Component
 public class ProjectSpecification {
 
-    public Specification<Project> build(FindProjectsQueryDTO queryDTO) {
+    public Specification<ProjectEntity> build(FindProjectsQueryDTO queryDTO) {
 
         return (root, query, cb) -> {
 

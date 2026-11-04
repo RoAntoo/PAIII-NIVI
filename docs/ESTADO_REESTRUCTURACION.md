@@ -25,3 +25,19 @@ Siguen pendientes las mejoras funcionales del plan: consulta resumida del dashbo
 Build de producción aprobado con advertencias de presupuesto CSS en home, listado de tareas y listado de proyectos. Pruebas Angular ejecutadas con temporales dentro del workspace por restricciones del entorno. No se ejecutó integración con servidor.
 
 Resultado Java: los 35 fuentes principales y los 8 archivos de prueba compilaron con JDK 21 en target-audit. El contexto Spring inició sobre H2 en memoria, pero la ejecución no finalizó tras la carga del agente de Mockito; se interrumpió sin dar las pruebas por aprobadas. Frontend: 3 pruebas aprobadas y build de producción aprobado.
+
+## Actualización: corrección funcional del backend
+
+Se completaron GET de proyecto, DELETE con cascada, GET de tareas y GET individual. Se protege la pertenencia de tareas al proyecto, se validan cambios antes de mutar entidades y se delimitan transacciones en las entradas HTTP. Se admite limpiar el responsable con null. Los errores de JSON/tipos devuelven 400, y los conflictos de integridad 409. CORS es configurable y las pruebas utilizan H2 en memoria. Mockito carga su agente al arrancar para resolver el bloqueo previo.
+
+Las observaciones anteriores de endpoints ausentes y pruebas bloqueadas quedan superadas por esta corrección. Se mantiene pendiente la separación completa entre dominio y JPA; esta entrega no pretende implementar esa refactorización ni migraciones, dashboard o Ionic.
+
+Verificación final de esta corrección: Maven verify aprobado con 33 pruebas, 0 fallos y 0 errores; JAR generado en backend/target-audit. La integración se comprobó con MockMvc y H2 en memoria, no mediante una sesión de navegador contra la base real.
+
+## Separación del dominio y JPA
+
+Implementada: modelos de dominio sin anotaciones de persistencia, ProjectEntity/TaskEntity independientes, puertos propios, adaptadores Spring Data y mapper. Los filtros JPA quedaron dentro de persistencia. Las consultas y eliminaciones de los controladores delegan en casos de uso. La transacción HTTP cubre la operación y los adaptadores se incorporan a ella. No se cambiaron tablas ni endpoints.
+
+Se agregaron pruebas de objetos de dominio independientes de la sesión JPA, preservación de tareas al actualizar proyectos, rollback de borrado y filtros por solapamiento de fechas; también se controla que el núcleo no dependa de Spring, JPA, Jackson o adaptadores. Esta sección sustituye las observaciones históricas que marcaban la separación dominio/JPA como pendiente.
+
+Validación final de la separación: Maven verify aprobado con 37 pruebas, sin fallos ni errores, y JAR generado en target-audit. Se verificó con H2 en memoria; no se ejecutó una migración ni se modificó la base local existente.

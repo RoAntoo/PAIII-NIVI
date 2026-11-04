@@ -11,9 +11,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@org.springframework.transaction.annotation.Transactional
 @RestController
 @RequestMapping("/projects/{projectId}/tasks")
 public class TaskController {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.pa.proyecto.backend_integrator.core.usecase.TaskQueriesUseCase queries;
+
+    private Task requireTask(Long projectId, Long taskId) {
+        return queries.get(projectId,taskId);
+    }
+    private TaskResponseDTO response(Task task) {
+        return new TaskResponseDTO(task.getId(), task.getTitle(), task.getEstimateHours(), task.getAssignee(), task.getStatus(), task.getFinishedAt(), task.getCreatedAt(), task.getProject().getId());
+    }
+    @GetMapping
+    public java.util.List<TaskResponseDTO> list(@PathVariable Long projectId) {
+        return queries.list(projectId).stream().map(this::response).toList();
+    }
+    @GetMapping("/{taskId}")
+    public TaskResponseDTO get(@PathVariable Long projectId, @PathVariable Long taskId) {
+        return response(requireTask(projectId, taskId));
+    }
 
     private final CreateTaskUseCase createTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
@@ -49,6 +68,7 @@ public class TaskController {
             @PathVariable Long taskId,
             @RequestBody UpdateTaskDTO dto) {
 
+        requireTask(projectId, taskId);
         Task updatedTask = updateTaskUseCase.updateTask(taskId, dto);
 
         TaskResponseDTO response = new TaskResponseDTO(

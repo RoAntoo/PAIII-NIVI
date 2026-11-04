@@ -17,9 +17,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@org.springframework.transaction.annotation.Transactional
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.pa.proyecto.backend_integrator.core.usecase.ProjectQueriesUseCase queries;
+
+    @GetMapping("/{projectId}")
+    public ProjectResponseDTO getProject(@PathVariable Long projectId) {
+        return mapProjectToResponse(queries.get(projectId));
+    }
+
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId) {
+        queries.delete(projectId);
+        return ResponseEntity.noContent().build();
+    }
 
     private final CreateProjectUseCase createProjectUseCase;
     private final UpdateProjectUseCase updateProjectUseCase;

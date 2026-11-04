@@ -1,7 +1,7 @@
 package com.pa.proyecto.backend_integrator.core.model;
 
-import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,6 +58,7 @@ public class Project {
     public static Project create(String name, LocalDate startDate, LocalDate endDate,
                                  ProjectStatus status, String description,
                                  LocalDate today) {
+        if (startDate == null || endDate == null || status == null) throw new IllegalArgumentException("Dates and status are required");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Project name is required");
         }
