@@ -1,7 +1,9 @@
 package com.pa.proyecto.backend_integrator.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
 import com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,16 +11,26 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+@Entity
+@Table(name = "tasks")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Task {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false)
     private Integer estimateHours;
     private String assignee;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TaskStatus status;
 
     private LocalDateTime finishedAt;
@@ -28,8 +40,9 @@ public class Task {
     // Muchas Tareas pertenecen a Un Proyecto
     // @JoinColumn le dice a JPA que esta tabla (tasks) tendrá una
     // columna llamada 'project_id' que es la Foreign Key.
-
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    @JsonIgnoreProperties("tasks")
     private Project project;
 
 
