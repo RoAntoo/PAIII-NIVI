@@ -25,10 +25,12 @@ public class Task {
     @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false)
     private Integer estimateHours;
     private String assignee;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TaskStatus status;
 
     private LocalDateTime finishedAt;

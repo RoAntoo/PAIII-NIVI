@@ -26,10 +26,13 @@ public class Project {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(nullable = false)
     private LocalDate startDate;
+    @Column(nullable = false)
     private LocalDate endDate;
 
     @Enumerated(EnumType.STRING) // Guarda el Enum como "ACTIVE" en lugar de 0, 1, 2
+    @Column(nullable = false)
     private ProjectStatus status;
 
     private String description;
