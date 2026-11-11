@@ -1,6 +1,6 @@
 :host { display: block; height: 100%; }
 ion-toolbar { --background: #ffffffdc; --padding-top: 0; --padding-bottom: 0; }
-ion-content { --background: linear-gradient(135deg, #fff0f5 0%, #f5fffa 50%, #f0fff0 100%); }
+ion-content { --background: var(--nivi-background); }
 .app-content { padding-top: 24px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
 @media (max-width: 576px) {
   .nav-links-custom { justify-content: center; width: 100%; flex-wrap: wrap; }

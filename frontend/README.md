@@ -1,27 +1,46 @@
-# Frontend Nivi
+# Frontend NIVI
 
-Angular 21 y Node.js 24. Ejecutar npm ci, npm start, npm test -- --watch=false y npm run build desde este directorio.
+Angular 21 standalone, Ionic 9 y Capacitor 8. Requiere Node.js 24. Desde este directorio:
 
-features/projects y features/tasks reúnen modelos, acceso HTTP y páginas. Home compone consultas de esas funcionalidades. features/auth contiene el login; core/auth conserva la sesión, protege las rutas y agrega el JWT exclusivamente a peticiones de la API configurada. shared/ui contiene el modal de confirmación con control de foco, Tab, Escape y restauración del foco.
+```powershell
+npm ci
+npm start
+npm test -- --watch=false
+npm run build
+```
 
-El backend debe tener AUTH_USERNAME, AUTH_PASSWORD y AUTH_JWT_SECRET configurados; consultar ../README.md. La sesión se guarda en sessionStorage y se elimina al cerrar sesión, vencer o recibir 401. No se guardan contraseñas. El retorno después del login se limita a rutas internas.
+Se conservan npm run start:ionic y npm run build:ionic. No hay script de lint.
 
-environment.ts configura producción (/api); environment.development.ts usa http://127.0.0.1:8081. public/runtime-config.js permite definir window.NIVI_CONFIG = { apiUrl: 'https://TU-API' } sin recompilar. Se carga después del elemento base para resolver correctamente las rutas internas. No incluir secretos en ese archivo.
+features/projects y features/tasks reúnen modelos, acceso HTTP y páginas. Home compone sus consultas. features/auth contiene el login; core/auth conserva la sesión, protege rutas y agrega JWT exclusivamente a peticiones de la API configurada. shared/ui mantiene el modal de confirmación accesible. Se conserva RouterOutlet de Angular y la ejecución sin Zone.js.
 
-El despliegue debe configurar proxy para /api/projects y /api/auth, retirando /api antes de reenviar al backend, y fallback SPA a index.html. El servidor debe permitir el origen exacto del cliente por CORS.
+El backend requiere AUTH_USERNAME, AUTH_PASSWORD y AUTH_JWT_SECRET; ver ../README.md. La sesión se guarda en sessionStorage y se limpia al cerrar sesión, vencer o recibir 401. No se guardan contraseñas. Volver a abrir la app puede requerir login; los ajustes persisten de forma independiente.
 
-Home solicita hasta tres proyectos con contadores calculados por el backend. Su progreso usa completedTasks / totalTasks, con 0% cuando no hay tareas. Los textos tienen un máximo de 255 caracteres y las horas son enteros positivos. Los estilos, fuentes e iconos externos siguen usando CDN.
+environment.ts configura producción (/api); environment.development.ts usa http://127.0.0.1:8081. public/runtime-config.js permite definir window.NIVI_CONFIG = { apiUrl: 'https://TU-API' } sin recompilar la web. Se carga después del elemento base. Esa configuración es pública y no debe contener secretos. El despliegue web necesita proxy /api y fallback SPA; consultar el README raíz.
 
-Las pruebas cubren rutas protegidas, sesión y expiración, envío del token, validaciones, errores de guardado, confirmación de borrado, progreso y navegación con teclado. Ver ../docs/ESTADO_ACTUAL.md para los resultados vigentes.
+## Android — PR 01
 
-## Integración Ionic — 11 de noviembre de 2026
+Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1 fijados. Proyecto nativo en android/, appId ar.edu.nivi.app, appName NIVI. El build Angular se empaqueta desde dist/frontend-tareas-proyectos/browser.
 
-Ionic Angular 9.0.10 está configurado con componentes standalone y provideIonicAngular. La estructura principal usa IonApp, IonHeader, IonToolbar e IonContent; el acceso usa IonButton e IonSpinner. Los estilos de Ionic están incluidos y conservan la paleta Nivi. Bootstrap continúa dando formato a las páginas existentes.
+```powershell
+$env:NIVI_API_URL = 'http://10.0.2.2:8081' # Emulador; usar IP LAN para celular.
+$env:NIVI_ALLOW_HTTP = 'true' # Desarrollo debug exclusivamente.
+npm run android:sync
+npm run android:open
+# Con SDK y JDK 21 disponibles:
+npm run android:build
+npm run android:run
+```
 
-Se mantiene RouterOutlet de Angular para conservar la destrucción de páginas, las suscripciones y el comportamiento del login; no se incorporó una pila de navegación con caché. Angular continúa funcionando sin cargar Zone.js; el paquete se instala por compatibilidad con los peer dependencies de Ionic.
+Los scripts Android exigen una API absoluta, preparan solo el bundle generado y conservan public/runtime-config.js. HTTPS por defecto; HTTP solo debug con opt-in. Para release, quitar NIVI_ALLOW_HTTP y usar una API HTTPS. CORS debe permitir el origen https://localhost del WebView.
 
-Desde frontend/: npm run start:ionic (puerto 4200, compatible con CORS local) y npm run build:ionic. También se conservan npm start y npm run build. ionic.config.json identifica el proyecto; los scripts pasan su nombre Angular explícitamente porque Ionic CLI 7 usa app por defecto.
+La guía completa de SDK, JDK, red local, permisos y checklist está en [android-setup.md](../docs/android-setup.md). El proyecto fue generado/sincronizado, pero el APK y las pruebas físicas quedan pendientes porque el entorno de implementación no tiene SDK Android configurado.
 
-Verificación: 16 pruebas frontend aprobadas y build de producción mediante Ionic CLI aprobado. Se mantienen los tres avisos CSS anteriores. No se agregaron proyectos nativos Android/iOS ni Capacitor; la integración actual es web y no genera un APK.
+## Servicios y pruebas
 
-La auditoría npm de las dependencias instaladas reportó 52 alertas (3 críticas, 22 altas, 25 moderadas y 2 bajas). El informe no atribuye alertas a @ionic/angular; las críticas aparecen en piscina, proxy-addr y tar. Su actualización requiere una revisión de dependencias separada.
+TaskService centraliza CRUD, validación previa a HTTP, timeout y mapeo compatible de DTO antiguos. Se conservan horas, responsable, estados e IDs. PR 01 incorpora categoría, origen, edición de estado y eliminación confirmada.
+
+SettingsService persiste seis flags con Preferences (SharedPreferences nativo, localStorage web). Sugerencias de lugares y offline empiezan desactivados. Los módulos futuros están señalados como pendientes y no tienen acciones simuladas. DeviceCapabilitiesService combina implementación, preferencia y disponibilidad del plugin; los permisos se pedirán al iniciar cada función cuando esté implementada.
+
+Bootstrap y Bootstrap Icons se empaquetan localmente; no se requieren CDN para mostrar la interfaz. El CRUD necesita conexión hasta PR 05. La paleta usa los tokens NIVI sin rediseñar las páginas existentes.
+
+Verificación PR 01: 33 tests frontend y build de producción aprobados; detalles y limitaciones en [pr01-base.md](../docs/pr01-base.md). Si Vitest falla con EPERM en temporales, crear .angular/test-temp y configurar TEMP/TMP a esa ruta para repetir. Persisten warnings de tamaño CSS y uno de tamaño inicial por los recursos locales. npm audit reportó 60 alertas; su corrección queda en una revisión de dependencias separada.

@@ -18,6 +18,7 @@
 
           <div *ngIf="errorMessage()" class="alert alert-danger" role="alert">
             {{ errorMessage() }}
+            <button *ngIf="!task()" type="button" class="btn btn-outline-secondary" (click)="loadTask()">Reintentar</button>
           </div>
 
           <form *ngIf="!isLoading() && task()" [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -45,6 +46,18 @@
               </div>
             </div>
 
+            <div class="mb-3">
+              <label for="status" class="form-label">Estado</label>
+              <select id="status" class="form-select" formControlName="status">
+                <option value="TODO">Pendiente</option>
+                <option value="IN_PROGRESS">En progreso</option>
+                <option value="DONE">Completada</option>
+              </select>
+              <label for="category" class="form-label">Categoría</label>
+              <select id="category" class="form-select" formControlName="category">
+                @for (category of categories; track category) { <option [value]="category">{{ categoryLabels[category] }}</option> }
+              </select>
+            </div>
             <div class="d-flex justify-content-end gap-2 mt-4">
               <button type="button" class="btn btn-outline-secondary" [routerLink]="['/projects', projectId, 'tasks']">Cancelar</button>
 

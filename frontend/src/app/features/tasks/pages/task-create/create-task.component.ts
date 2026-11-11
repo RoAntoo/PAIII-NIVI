@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@ang
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TaskService } from '../../data-access/task-api.service';
-import { TaskStatus } from '../../domain/task.models';
+import { TaskStatus, TaskCategory, TASK_CATEGORIES, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 
 @Component({
   selector: 'app-create-task',
@@ -19,6 +19,8 @@ export class CreateTaskComponent implements OnInit {
   private router = inject(Router);
 
   projectId!: number;
+  readonly categories = TASK_CATEGORIES;
+  readonly categoryLabels = TASK_CATEGORY_LABELS;
   loading = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
@@ -28,6 +30,7 @@ export class CreateTaskComponent implements OnInit {
     estimateHours: [null as number | null, [Validators.required, Validators.min(1), Validators.max(2147483647), Validators.pattern(/^[1-9]\d*$/)]],
     assignee: ['', Validators.maxLength(255)],
     status: ['TODO', Validators.required],
+    category: ['GENERAL' as TaskCategory, Validators.required],
   });
 
   ngOnInit(): void {
@@ -49,12 +52,14 @@ export class CreateTaskComponent implements OnInit {
         estimateHours: this.form.value.estimateHours!,
         assignee: this.form.value.assignee?.trim() || null,
         status: this.form.value.status as TaskStatus,
+        category: this.form.value.category!,
+        source: 'MANUAL',
       })
       .subscribe({
         next: () => {
           this.loading.set(false);
           this.successMessage.set('Tarea creada exitosamente. Redirigiendo...');
-          this.form.reset({ status: 'TODO' });
+          this.form.reset({ status: 'TODO', category: 'GENERAL' });
           setTimeout(() => {
             this.router.navigate(['/projects', this.projectId, 'tasks']);
           }, 2000);

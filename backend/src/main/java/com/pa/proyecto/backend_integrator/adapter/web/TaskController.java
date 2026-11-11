@@ -23,7 +23,7 @@ public class TaskController {
         return queries.get(projectId,taskId);
     }
     private TaskResponseDTO response(Task task) {
-        return new TaskResponseDTO(task.getId(), task.getTitle(), task.getEstimateHours(), task.getAssignee(), task.getStatus(), task.getFinishedAt(), task.getCreatedAt(), task.getProject().getId());
+        return TaskResponseDTO.from(task);
     }
     @GetMapping
     public java.util.List<TaskResponseDTO> list(@PathVariable Long projectId) {
@@ -32,6 +32,12 @@ public class TaskController {
     @GetMapping("/{taskId}")
     public TaskResponseDTO get(@PathVariable Long projectId, @PathVariable Long taskId) {
         return response(requireTask(projectId, taskId));
+    }
+
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long projectId, @PathVariable Long taskId) {
+        queries.delete(projectId, taskId);
+        return ResponseEntity.noContent().build();
     }
 
     private final CreateTaskUseCase createTaskUseCase;
@@ -49,16 +55,7 @@ public class TaskController {
 
         Task createdTask = createTaskUseCase.createTask(projectId, dto);
 
-        TaskResponseDTO response = new TaskResponseDTO(
-                createdTask.getId(),
-                createdTask.getTitle(),
-                createdTask.getEstimateHours(),
-                createdTask.getAssignee(),
-                createdTask.getStatus(),
-                createdTask.getFinishedAt(),
-                createdTask.getCreatedAt(),
-                createdTask.getProject().getId()
-        );
+        TaskResponseDTO response = TaskResponseDTO.from(createdTask);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -71,16 +68,7 @@ public class TaskController {
         requireTask(projectId, taskId);
         Task updatedTask = updateTaskUseCase.updateTask(taskId, dto.toCommand());
 
-        TaskResponseDTO response = new TaskResponseDTO(
-                updatedTask.getId(),
-                updatedTask.getTitle(),
-                updatedTask.getEstimateHours(),
-                updatedTask.getAssignee(),
-                updatedTask.getStatus(),
-                updatedTask.getFinishedAt(),
-                updatedTask.getCreatedAt(),
-                updatedTask.getProject().getId()
-        );
+        TaskResponseDTO response = TaskResponseDTO.from(updatedTask);
         return ResponseEntity.ok(response);
     }
 }

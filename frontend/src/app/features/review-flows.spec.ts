@@ -101,7 +101,7 @@ describe('protected routes', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/projects/12/tasks');
     expect(TestBed.inject(Router).url).toBe('/login?returnUrl=%2Fprojects%2F12%2Ftasks');
-    expect(harness.routeNativeElement?.textContent).toContain('Ingresar a Nivi');
+    expect(harness.routeNativeElement?.textContent).toContain('Ingresar a NIVI');
     TestBed.inject(HttpTestingController).verify();
   });
 });

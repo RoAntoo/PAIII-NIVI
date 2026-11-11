@@ -5,7 +5,7 @@
   <div class="container d-flex justify-content-between align-items-center">
 
     <a class="navbar-brand-custom fw-bold mb-0" routerLink="/">
-      <span class="logo-icon">🌱</span> Nivi
+      <span class="logo-icon">🌱</span> NIVI
     </a>
 
     @if (auth.signedIn()) {
@@ -31,6 +31,9 @@
            routerLinkActive="active-link-custom">
           + Nuevo Proyecto
         </a>
+      </li>
+      <li class="nav-item d-flex align-items-center">
+        <a class="nav-link-custom" routerLink="/settings" routerLinkActive="active-link-custom">Ajustes</a>
       </li>
       <li class="nav-item d-flex align-items-center">
         <button type="button" class="nav-link-custom border-0 bg-transparent" (click)="auth.logout()">Cerrar sesión</button>

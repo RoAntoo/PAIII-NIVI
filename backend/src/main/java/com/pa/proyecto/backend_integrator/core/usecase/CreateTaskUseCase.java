@@ -38,7 +38,7 @@ public class CreateTaskUseCase implements ITaskCreateInput {
             throw new BusinessRuleViolationException("Cannot add a task to a CLOSED project");
         }
 
-        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
 
         Task task = Task.create(
                 project,
@@ -49,6 +49,9 @@ public class CreateTaskUseCase implements ITaskCreateInput {
                 now
         );
 
+        if (dto.source() != null) task.setSource(dto.source());
+        if (dto.category() != null) task.setCategory(dto.category());
+        task.setClientRequestId(dto.clientRequestId());
         return taskRepository.save(task);
     }
 }

@@ -17,6 +17,36 @@ class SchemaConstraintTest {
         } catch (java.sql.SQLException ex) { throw new ExceptionInInitializerError(ex); }
     }
     @Autowired JdbcTemplate jdbc;
+    @Test void metadataMigrationIsRepeatableAndRollbackKeepsOriginalTaskData() throws Exception {
+        try (var connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:pr01_migration", "sa", "")) {
+            try (var sql = connection.createStatement()) {
+                sql.execute("create table tasks(id bigint primary key, title varchar(255))");
+                sql.execute("insert into tasks values(9, 'Legacy task')");
+            }
+            var migration = new org.springframework.core.io.ClassPathResource("db/pr01-task-metadata.sql");
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection, migration);
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection, migration);
+            try (var sql = connection.createStatement(); var row = sql.executeQuery("select id, title, source, category from tasks")) {
+                assertTrue(row.next());
+                assertEquals(9, row.getLong("id"));
+                assertEquals("Legacy task", row.getString("title"));
+                assertEquals("MANUAL", row.getString("source"));
+                assertEquals("GENERAL", row.getString("category"));
+            }
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
+                    new org.springframework.core.io.ClassPathResource("db/rollback/pr01-task-metadata.sql"));
+            try (var sql = connection.createStatement(); var row = sql.executeQuery("select * from tasks")) {
+                assertEquals(2, row.getMetaData().getColumnCount());
+                assertTrue(row.next());
+                assertEquals("Legacy task", row.getString("title"));
+            }
+        }
+    }
+    @Test void legacyTasksKeepIdsAndReceiveMetadataDefaults() {
+        assertEquals("MANUAL", jdbc.queryForObject("select source from tasks where id=500", String.class));
+        assertEquals("GENERAL", jdbc.queryForObject("select category from tasks where id=500", String.class));
+        assertNull(jdbc.queryForObject("select client_request_id from tasks where id=500", java.util.UUID.class));
+    }
     @Test void legacyCompletedTasksAreNormalizedWithoutLosingTheirTimestamp() {
         assertEquals("DONE", jdbc.queryForObject("select status from tasks where id=500", String.class));
         assertEquals(jdbc.queryForObject("select created_at from tasks where id=500", java.sql.Timestamp.class),

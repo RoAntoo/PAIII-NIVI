@@ -12,8 +12,13 @@ import com.pa.proyecto.backend_integrator.core.output.ITaskRepository;
 public class UpdateTaskUseCase implements IUpdateTaskInput {
 
     private final ITaskRepository taskRepository;
+    private final java.time.Clock clock;
     public UpdateTaskUseCase(ITaskRepository taskRepository){
+        this(taskRepository, java.time.Clock.systemDefaultZone());
+    }
+    public UpdateTaskUseCase(ITaskRepository taskRepository, java.time.Clock clock){
         this.taskRepository = taskRepository;
+        this.clock = clock;
     }
 
     @Override
@@ -33,6 +38,9 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
         // Validate the complete command before mutating the domain object.
         if (title != null) existingTask.setTitle(title);
         if (dto.estimateHours() != null) existingTask.setEstimateHours(dto.estimateHours());
+        if (dto.category() != null) existingTask.setCategory(dto.category());
+        if (dto.status() != null) existingTask.setStatus(dto.status(),
+                java.time.LocalDateTime.now(clock).truncatedTo(java.time.temporal.ChronoUnit.MICROS));
 
         if (dto.hasAssignee()) {
             existingTask.setAssignee(dto.assignee());

@@ -5,17 +5,19 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  ElementRef,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LowerCasePipe } from '@angular/common';
 import { TaskService } from '../../data-access/task-api.service';
-import { TaskResponse } from '../../domain/task.models';
+import { TaskResponse, TASK_CATEGORY_LABELS } from '../../domain/task.models';
+import { ConfirmationModalComponent } from '../../../../shared/ui/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LowerCasePipe, RouterLink],
+  imports: [LowerCasePipe, RouterLink, ConfirmationModalComponent],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.css',
 })
@@ -23,6 +25,11 @@ export class TaskListComponent implements OnInit {
   private taskService = inject(TaskService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly pendingDelete = signal<TaskResponse | null>(null);
+  readonly isDeleting = signal(false);
+  readonly deleteError = signal<string | null>(null);
+  readonly categoryLabels = TASK_CATEGORY_LABELS;
 
   projectId: string = '';
   tasks = signal<TaskResponse[]>([]);
@@ -75,8 +82,8 @@ export class TaskListComponent implements OnInit {
         this.tasks.set(data);
         this.loading.set(false);
       },
-      error: (err: Error) => {
-        this.error.set(err.message);
+      error: () => {
+        this.error.set('No se pudieron cargar las tareas. Verificá la conexión y reintentá.');
         this.loading.set(false);
       },
     });
@@ -85,6 +92,39 @@ export class TaskListComponent implements OnInit {
   onFilterChange(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
     this.filterStatus.set(selectElement.value);
+  }
+
+  requestDelete(task: TaskResponse): void {
+    this.deleteError.set(null);
+    this.pendingDelete.set(task);
+  }
+
+  cancelDelete(): void {
+    if (!this.isDeleting()) {
+      this.pendingDelete.set(null);
+      this.host.nativeElement.querySelector<HTMLSelectElement>('#statusFilter')?.focus();
+    }
+  }
+
+  confirmDelete(): void {
+    const task = this.pendingDelete();
+    if (!task || this.isDeleting()) return;
+    this.isDeleting.set(true);
+    this.deleteError.set(null);
+    this.taskService.deleteTask(Number(this.projectId), task.id).subscribe({
+      next: () => {
+        this.tasks.update(tasks => tasks.filter(item => item.id !== task.id));
+        this.pendingDelete.set(null);
+        this.isDeleting.set(false);
+        this.host.nativeElement.querySelector<HTMLSelectElement>('#statusFilter')?.focus();
+      },
+      error: (err) => {
+        this.isDeleting.set(false);
+        this.deleteError.set(err.status === 409
+          ? 'No se pueden borrar tareas de un proyecto cerrado.'
+          : 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');
+      },
+    });
   }
 }
 

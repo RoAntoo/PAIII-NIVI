@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TaskService } from '../../data-access/task-api.service';
-import { TaskResponse } from '../../domain/task.models';
+import { TaskResponse, TaskStatus, TaskCategory, TASK_CATEGORIES, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 
 @Component({
   selector: 'app-update-task',
@@ -21,6 +21,8 @@ export class UpdateTaskComponent implements OnInit {
 
   projectId!: number;
   taskId!: number;
+  readonly categories = TASK_CATEGORIES;
+  readonly categoryLabels = TASK_CATEGORY_LABELS;
 
   // Estado local con signals
   isLoading = signal(false);
@@ -32,6 +34,8 @@ export class UpdateTaskComponent implements OnInit {
     title: ['', [Validators.required, Validators.pattern(/\S+/), Validators.maxLength(255)]],
     estimateHours: [1, [Validators.required, Validators.min(1), Validators.max(2147483647), Validators.pattern(/^[1-9]\d*$/)]],
     assignee: ['', Validators.maxLength(255)],
+    status: ['TODO' as TaskStatus, Validators.required],
+    category: ['GENERAL' as TaskCategory, Validators.required],
   });
 
   ngOnInit(): void {
@@ -40,7 +44,7 @@ export class UpdateTaskComponent implements OnInit {
     this.loadTask();
   }
 
-  private loadTask(): void {
+  loadTask(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
@@ -51,6 +55,8 @@ export class UpdateTaskComponent implements OnInit {
           title: task.title,
           estimateHours: task.estimateHours,
           assignee: task.assignee ?? '',
+          status: task.status,
+          category: task.category,
         });
         this.isLoading.set(false);
       },
@@ -71,13 +77,15 @@ export class UpdateTaskComponent implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set(null);
 
-    const { title, estimateHours, assignee } = this.form.getRawValue();
+    const { title, estimateHours, assignee, status, category } = this.form.getRawValue();
 
     this.taskService
       .updateTask(this.projectId, this.taskId, {
         title: title!.trim(),
         estimateHours: estimateHours!,
         assignee: assignee?.trim() || null,
+        status: status!,
+        category: category!,
       })
       .subscribe({
         next: () => {

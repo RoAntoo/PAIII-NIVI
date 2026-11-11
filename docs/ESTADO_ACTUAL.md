@@ -1,52 +1,38 @@
 # Estado actual — 11 de noviembre de 2026
 
-Este documento es la referencia vigente. ESTADO_REESTRUCTURACION.md y REVISION_BACKEND.md conservan diagnósticos y resultados históricos de otras revisiones; no representan el código actual.
+La referencia vigente es la implementación local del **PR 01**. El [diagnóstico y la evidencia](pr01-base.md) distinguen lo implementado de lo pendiente. ESTADO_REESTRUCTURACION.md y REVISION_BACKEND.md conservan revisiones históricas.
 
-## Mejoras aplicadas
+## Funciones y arquitectura
 
-- Login local con JWT, API protegida, respuestas 401 y CORS para autenticación. Cuenta única configurada en el servidor; sin registro ni separación por propietario.
-- Credenciales obligatorias AUTH_USERNAME, AUTH_PASSWORD y AUTH_JWT_SECRET. Sin contraseñas ni claves productivas dentro del repositorio.
-- Sesión del navegador en sessionStorage, cierre de sesión, expiración, protección de rutas y retorno interno después del login. El interceptor no envía el token a servicios externos.
-- runtime-config.js se carga después de base, para que la configuración también se resuelva al abrir una ruta interna directamente.
-- Estados de tareas unificados: TODO, IN_PROGRESS y DONE. El script H2 normaliza los registros históricos COMPLETED conservando los tiempos conocidos.
-- Errores con código de causa: solo DUPLICATE_RESOURCE se muestra como nombre duplicado; los demás conflictos conservan su mensaje.
-- Límites de texto de 255 caracteres en cliente y dominio. Las horas fraccionarias se rechazan sin truncamiento. La validación de una actualización ocurre antes de modificar el objeto.
-- Se impide crear y editar tareas en proyectos cerrados. Assignee omitido conserva el valor; null explícito lo borra.
-- Listado de proyectos mediante ProjectSummary: campos escalares y contadores en una consulta agregada, sin cargar entidades ni colecciones. Filtros existentes conservados, orden por ID descendente y limit opcional entre 1 y 100 aplicado en SQL.
-- Home solicita limit=3, calcula el progreso real con totalTasks/completedTasks y mantiene una segunda petición para las cuatro tareas recientes.
-- Modal con semántica de diálogo, foco inicial en cancelar, ciclo de Tab, Escape y restauración del foco. Labels de formularios asociados a sus controles.
-- 75 archivos generados de backend/target-review retirados del índice Git; copias locales conservadas. Las salidas de compilación siguen ignoradas.
-- Workflow de GitHub Actions para pruebas del backend, pruebas del frontend y build de producción.
+- Angular standalone 21.2.8, Ionic Angular 9.0.10, TypeScript 5.9; RouterOutlet de Angular y ejecución sin Zone.js.
+- Java 21, Spring Boot 3.5.7, JPA/Hibernate, H2. El dominio sigue independiente de Spring/JPA/Jackson.
+- Cuenta única configurada por entorno, JWT de una hora, sesión en sessionStorage, rutas protegidas y token enviado solo a la API configurada. Sin registro, refresh token ni separación por propietario.
+- Proyectos con CRUD, filtros y contadores agregados. Home conserva limit=3 y consulta de cuatro tareas recientes.
+- Tareas con CRUD completo, categoría, origen, estados TODO/IN_PROGRESS/DONE y fecha de completado. Completar de nuevo conserva la fecha; reabrir la borra. No se permite crear, editar ni borrar tareas de proyectos cerrados.
+- Textos de hasta 255 caracteres, horas enteras positivas, actualizaciones parciales y borrado confirmado. Assignee omitido conserva el valor; null lo elimina.
+- Metadatos compatibles de tareas antiguas: MANUAL/GENERAL. UUID de cliente opcional y único como preparación para reintentos; todavía no hay replay idempotente ni sincronización.
+- Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1. Nombre NIVI, appId ar.edu.nivi.app, proyecto Android generado y sincronizado.
+- Ajustes persistentes con seis flags. Los módulos futuros indican el PR pendiente. Lugares y offline desactivados inicialmente. Servicio de capacidades separado, sin permisos sensibles al iniciar.
+- Tokens NIVI y recursos Bootstrap/iconos empaquetados localmente. Se conserva el diseño general de las páginas.
 
-## Ejecución y datos existentes
+## Desarrollo y datos
 
-Consultar los README de raíz, backend y frontend. La configuración de API sigue siendo pública; nunca debe incluir credenciales. En producción con /api, el proxy debe retirar el prefijo tanto para /projects como para /auth. CORS_ALLOWED_ORIGINS contiene orígenes exactos separados por comas; los locales por defecto son http://localhost:4200 y http://127.0.0.1:4200.
+Consultar los README de raíz, frontend y backend. La [guía Android](android-setup.md) documenta SDK/JDK, CORS para https://localhost, URL de API accesible desde emulador/celular y HTTP exclusivamente debug. Las variables de .env.example son referencias; los procesos no cargan esos archivos automáticamente.
 
-La clave JWT debe ser aleatoria y contener al menos 32 bytes. La contraseña requiere al menos 12 caracteres y hasta 72 bytes UTF-8. No hay cuenta por defecto. El backend falla al arrancar si la configuración no es válida.
+Respaldar la base persistente antes de cambiar el esquema. El SQL sigue siendo específico de H2 y posterior a Hibernate. PR 01 incorpora una migración aditiva/repetible de metadatos y un rollback manual probado, conservando los IDs y campos previos. Las verificaciones usaron H2 temporal, sin modificar la base del usuario.
 
-Respaldar la base persistente antes de iniciar una versión con cambios de esquema. El SQL sigue siendo específico de H2 y se ejecuta después de Hibernate; endurece columnas y normaliza el alias de estado. No rellena nulos de negocio. No se ejecutó la aplicación sobre la base persistente del usuario durante esta implementación.
+## Verificación
 
-## Verificación local
+- Base inicial del PR 01: 19 pruebas frontend y 50 backend aprobadas.
+- Resultado actual: 33 pruebas frontend y 56 backend aprobadas; build Angular de producción y JAR backend aprobados.
+- Capacitor Android generado y sincronizado con Preferences real registrado.
+- La compilación del APK se detuvo por falta de SDK Android. No se abrió Android Studio ni se probaron Gradle/release o un celular físico. [Checklist pendiente](android-setup.md).
+- Intento de verificación visual del servidor local: timeout en el navegador de pruebas. No se registra como prueba visual aprobada.
+- Se mantienen tres warnings CSS y se agrega uno de bundle inicial por los recursos locales (aprox. 829 kB; límite de error 1 MB conservado).
+- npm audit online: 60 alertas, 3 críticas, 27 altas, 25 moderadas y 5 bajas. Revisión de dependencias pendiente.
+- Sin script de lint. Workflow existente de tests frontend/backend y build web conservado, sin ejecución remota durante este trabajo.
+- No se crearon ramas ni commits y no se hicieron push ni PR remotos.
 
-- Backend: Maven verify, 50 pruebas, sin fallos ni errores; JAR generado en target-audit. Incluye login y JWT real, firmas inválidas, expiración, emisor, permisos anónimos, CORS, longitudes, enteros, proyectos cerrados, migración del estado histórico y conteo de consultas/entidades cargadas.
-- Frontend: 16 pruebas aprobadas y build de producción aprobado. Incluye rutas, fechas, sesión, token, expiración, guardado fallido sin pérdida de datos, confirmación de borrado, progreso y foco del modal.
-- Las pruebas de backend usan H2 en memoria y credenciales exclusivas de test. No se usaron las credenciales ni la base persistente del usuario.
-- CI agregada pero pendiente de ejecución remota cuando se publique la rama o el PR.
+## Pendientes de alcance
 
-Se mantienen tres advertencias de presupuesto CSS ya existentes en Home, listado de proyectos y listado de tareas. No se alteraron los límites para ocultarlas. No se hizo una nueva verificación visual en navegador ni se desplegó la aplicación.
-
-## Alcance pendiente
-
-Recursos CDN locales/offline, migraciones versionadas, paginación completa del listado, OpenAPI, gestión de múltiples usuarios, cambios de estado y otras funciones de producto quedan fuera de esta revisión. Ionic Angular 9.0.10 está integrado en el frontend. El backend tiene un único usuario configurable y JWT de una hora; no hay refresh tokens ni revocación individual.
-
-## Integración Ionic — 11 de noviembre de 2026
-
-Ionic Angular 9.0.10 está configurado con componentes standalone y provideIonicAngular. La estructura principal usa IonApp, IonHeader, IonToolbar e IonContent; el acceso usa IonButton e IonSpinner. Los estilos de Ionic están incluidos y conservan la paleta Nivi. Bootstrap continúa dando formato a las páginas existentes.
-
-Se mantiene RouterOutlet de Angular para conservar la destrucción de páginas, las suscripciones y el comportamiento del login; no se incorporó una pila de navegación con caché. Angular continúa funcionando sin cargar Zone.js; el paquete se instala por compatibilidad con los peer dependencies de Ionic.
-
-Desde frontend/: npm run start:ionic (puerto 4200, compatible con CORS local) y npm run build:ionic. También se conservan npm start y npm run build. ionic.config.json identifica el proyecto; los scripts pasan su nombre Angular explícitamente porque Ionic CLI 7 usa app por defecto.
-
-Verificación: 16 pruebas frontend aprobadas y build de producción mediante Ionic CLI aprobado. Se mantienen los tres avisos CSS anteriores. No se agregaron proyectos nativos Android/iOS ni Capacitor; la integración actual es web y no genera un APK.
-
-La auditoría npm de las dependencias instaladas reportó 52 alertas (3 críticas, 22 altas, 25 moderadas y 2 bajas). El informe no atribuye alertas a @ionic/angular; las críticas aparecen en piscina, proxy-addr y tar. Su actualización requiere una revisión de dependencias separada.
+El código del PR 01 queda preparado para revisión, con aceptación Android pendiente de APK y prueba física. Voz (PR 02), cámara/OCR/QR (PR 03), lugares (PR 04), recordatorios y offline/sync (PR 05) no están implementados. El CRUD sigue requiriendo backend. Multiusuario, OpenAPI, paginación completa y gestión versionada de todas las migraciones siguen fuera de este incremento.

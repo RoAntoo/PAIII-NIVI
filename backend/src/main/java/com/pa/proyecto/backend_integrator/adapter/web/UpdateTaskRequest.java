@@ -8,6 +8,20 @@ public final class UpdateTaskRequest {
     private Integer estimateHours;
     private String assignee;
     private boolean assigneePresent;
+    private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
+    private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
+
+    @JsonSetter("status")
+    public void setStatus(com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status) {
+        if (status == null) throw new IllegalArgumentException("Task status cannot be null");
+        this.status = status;
+    }
+
+    @JsonSetter("category")
+    public void setCategory(com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category) {
+        if (category == null) throw new IllegalArgumentException("Task category cannot be null");
+        this.category = category;
+    }
 
     /** Creates an empty update for Jackson's property-based deserialization. */
     public UpdateTaskRequest() {}
@@ -48,6 +62,7 @@ public final class UpdateTaskRequest {
     public com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO toCommand() {
         var command = new com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO();
         command.setTitle(title); command.setEstimateHours(estimateHours);
+        command.setStatus(status); command.setCategory(category);
         if (assigneePresent) command.setAssignee(assignee);
         return command;
     }

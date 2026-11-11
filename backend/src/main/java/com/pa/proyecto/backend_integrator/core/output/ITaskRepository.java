@@ -8,4 +8,5 @@ public interface ITaskRepository {
  Optional<Task> findByIdAndProjectId(Long id,Long projectId);
  List<Task> findByProjectId(Long projectId);
  boolean existsById(Long id);
+ void delete(Task task);
 }

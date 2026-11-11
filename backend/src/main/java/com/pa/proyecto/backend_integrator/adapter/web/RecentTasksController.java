@@ -10,5 +10,5 @@ public class RecentTasksController {
  public RecentTasksController(RecentTasksUseCase useCase){this.useCase=useCase;}
  public record RecentTask(TaskResponseDTO task,Long projectId,String projectName) {}
  @GetMapping("/projects/recent-tasks")
- public List<RecentTask> recent(){return useCase.find().stream().map(t->new RecentTask(new TaskResponseDTO(t.getId(),t.getTitle(),t.getEstimateHours(),t.getAssignee(),t.getStatus(),t.getFinishedAt(),t.getCreatedAt(),t.getProject().getId()),t.getProject().getId(),t.getProject().getName())).toList();}
+ public List<RecentTask> recent(){return useCase.find().stream().map(t->new RecentTask(TaskResponseDTO.from(t),t.getProject().getId(),t.getProject().getName())).toList();}
 }
