@@ -27,8 +27,18 @@ public class CreateTaskUseCase implements ITaskCreateInput {
         this.clock = clock;
     }
 
+    /** Replays a keyed creation by returning its current task; a key never applies later edits. */
     @Override
     public Task createTask(Long projectId, CreateTaskDTO dto) {
+
+        if (dto.clientRequestId() != null) {
+            var previous = taskRepository.findByClientRequestId(dto.clientRequestId());
+            if (previous.isPresent()) {
+                if (!previous.get().getProject().getId().equals(projectId))
+                    throw new BusinessRuleViolationException("Creation key belongs to another project");
+                return previous.get();
+            }
+        }
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new
@@ -38,7 +48,7 @@ public class CreateTaskUseCase implements ITaskCreateInput {
             throw new BusinessRuleViolationException("Cannot add a task to a CLOSED project");
         }
 
-        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
 
         Task task = Task.create(
                 project,
@@ -49,6 +59,9 @@ public class CreateTaskUseCase implements ITaskCreateInput {
                 now
         );
 
-        return taskRepository.save(task);
+        if (dto.source() != null) task.setSource(dto.source());
+        if (dto.category() != null) task.setCategory(dto.category());
+        task.setClientRequestId(dto.clientRequestId());
+        return dto.clientRequestId() == null ? taskRepository.save(task) : taskRepository.createOnce(task);
     }
 }

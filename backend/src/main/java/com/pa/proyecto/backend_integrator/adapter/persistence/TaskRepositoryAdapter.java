@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 @Repository @Transactional
 public class TaskRepositoryAdapter implements ITaskRepository {
+ @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
  private final TaskJpaRepository repository;private final ProjectJpaRepository projects;
  public TaskRepositoryAdapter(TaskJpaRepository repository,ProjectJpaRepository projects){this.repository=repository;this.projects=projects;}
  public java.util.List<Task> findRecent(){return repository.findTop4ByOrderByCreatedAtDescIdDesc().stream().map(PersistenceMapper::task).toList();}
@@ -16,4 +17,22 @@ public class TaskRepositoryAdapter implements ITaskRepository {
  public Optional<Task> findByIdAndProjectId(Long id,Long p){return repository.findByIdAndProjectId(id,p).map(PersistenceMapper::task);}
  public List<Task> findByProjectId(Long p){return repository.findByProjectId(p).stream().map(PersistenceMapper::task).toList();}
  public boolean existsById(Long id){return repository.existsById(id);}
+ /** Looks up a previously committed creation key, including tasks subsequently edited. */
+ public Optional<Task> findByClientRequestId(UUID key){return repository.findByClientRequestId(key).map(PersistenceMapper::task);}
+ /** Holds a database project lock across key lookup and insert so concurrent retries converge. */
+ public Task createOnce(Task task) {
+  var project = projects.findById(task.getProject().getId()).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+  entityManager.refresh(project, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+  var previous = findByClientRequestId(task.getClientRequestId());
+  if (previous.isPresent()) {
+   if (!previous.get().getProject().getId().equals(project.getId()))
+    throw new com.pa.proyecto.backend_integrator.core.exception.BusinessRuleViolationException("Creation key belongs to another project");
+   return previous.get();
+  }
+  if (project.getStatus() == com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus.CLOSED)
+   throw new com.pa.proyecto.backend_integrator.core.exception.BusinessRuleViolationException("Cannot add a task to a CLOSED project");
+  return save(task);
+ }
+ /** Deletes and flushes the task inside the adapter transaction. */
+ public void delete(Task task){repository.deleteById(task.getId());repository.flush();}
 }

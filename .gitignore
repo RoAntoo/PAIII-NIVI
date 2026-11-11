@@ -61,3 +61,16 @@ Thumbs.db
 **/target-audit/
 
 /backend/target-review/
+
+# Android local state, secrets and generated artifacts
+**/.gradle/
+**/build/
+**/local.properties
+**/*.jks
+**/*.keystore
+**/*.apk
+**/*.aab
+**/capacitor-cordova-android-plugins/
+**/src/main/assets/public/
+**/src/main/assets/capacitor.config.json
+**/src/main/assets/capacitor.plugins.json

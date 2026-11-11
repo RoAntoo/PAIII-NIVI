@@ -1,6 +1,8 @@
 # Nivi — proyectos y tareas
 
-Aplicación Angular 21 con API Java 21 / Spring Boot 3.5.7. El estado vigente y las decisiones de alcance están en [docs/ESTADO_ACTUAL.md](docs/ESTADO_ACTUAL.md).
+Aplicación Angular 21 + Ionic 9 + Capacitor 8 con API Java 21 / Spring Boot 3.5.7. El estado vigente y las decisiones de alcance están en [docs/ESTADO_ACTUAL.md](docs/ESTADO_ACTUAL.md).
+
+PR 01 incorpora el proyecto Android y ajustes persistentes. Consultar [configuración Android](docs/android-setup.md), [diagnóstico y pruebas](docs/pr01-base.md) y [descripción del PR](docs/PR01.md). El APK debug ya se generó y su firma fue verificada; la prueba en celular sigue pendiente.
 
 - **frontend/**: funcionalidades de proyectos, tareas, inicio y autenticación.
 - **backend/**: dominio independiente de Spring/JPA, casos de uso y adaptadores HTTP/persistencia.
@@ -36,24 +38,24 @@ El frontend muestra un login local y usa un JWT de una hora. Hay una única cuen
 npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build
 Set-Location backend
-.\mvnw.cmd verify -Dnivi.build.directory=target-audit
+.\mvnw.cmd verify '-Dnivi.build.directory=target-audit'
 ~~~
 
 Las pruebas usan credenciales exclusivas de test y H2 en memoria. No necesitan configurar secretos personales. GitHub Actions ejecuta las pruebas del backend, las del frontend y el build de producción en cada PR.
 
 ## Funciones y despliegue
 
-Alta, consulta, edición y eliminación de proyectos; alta, consulta y edición de tareas por proyecto. Estados de tareas: TODO, IN_PROGRESS, DONE. No se permite crear ni editar tareas de proyectos cerrados. La edición no cambia estados; no existe eliminación individual ni prioridad de tareas.
+Alta, consulta, edición y eliminación de proyectos y tareas por proyecto. Estados de tareas: TODO, IN_PROGRESS, DONE; la edición permite completarlas y reabrirlas. No se permite crear, editar ni borrar tareas de proyectos cerrados. Se incorporan categoría y origen con defaults GENERAL/MANUAL, conservando datos e IDs anteriores. No existe prioridad de tareas.
 
 Los textos admiten hasta 255 caracteres y las horas deben ser enteros positivos. El resumen muestra progreso calculado a partir de tareas completadas, con contadores agregados en la base y hasta tres proyectos por petición.
 
 Desarrollo usa http://127.0.0.1:8081; producción usa /api. public/runtime-config.js permite sobrescribir apiUrl sin recompilar. El proxy debe retirar /api antes de reenviar tanto /api/projects como /api/auth al backend y servir index.html como fallback de rutas Angular. Las variables del frontend son públicas y no deben contener contraseñas ni claves de firma.
 
-Bootstrap, iconos y fuentes se sirven desde CDN; la aplicación requiere conexión para esos recursos. Los directorios de compilación están ignorados y no se versionan.
+Bootstrap e iconos se empaquetan localmente y se usa una fuente de sistema si Outfit no está instalada. La interfaz puede cargar sin CDN; el CRUD sigue requiriendo backend hasta PR 05. Los directorios de compilación están ignorados y no se versionan.
 
 Si apiUrl apunta a un origen distinto del frontend, configurar CORS_ALLOWED_ORIGINS en el backend con el origen exacto del frontend (protocolo, host y puerto, sin ruta). Por defecto solo se permiten http://localhost:4200 y http://127.0.0.1:4200. Por ejemplo, para un cliente en https://nivi.example, usar CORS_ALLOWED_ORIGINS=https://nivi.example aunque la API esté en otro dominio.
 
-## Integración Ionic — 11 de noviembre de 2026
+## Integración Ionic inicial — referencia histórica, anterior al PR 01
 
 Ionic Angular 9.0.10 está configurado con componentes standalone y provideIonicAngular. La estructura principal usa IonApp, IonHeader, IonToolbar e IonContent; el acceso usa IonButton e IonSpinner. Los estilos de Ionic están incluidos y conservan la paleta Nivi. Bootstrap continúa dando formato a las páginas existentes.
 

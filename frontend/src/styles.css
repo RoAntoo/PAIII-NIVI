@@ -6,26 +6,29 @@
 
 :root {
   --ion-font-family: 'Outfit', 'Segoe UI', sans-serif;
-  --ion-background-color: #f5fffa;
-  --ion-text-color: #2c3e50;
-  --ion-color-primary: #2e7d32;
-  --ion-color-primary-rgb: 46, 125, 50;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-shade: #286e2c;
-  --ion-color-primary-tint: #438a47;
-  --primary-mint: #A5D6A7;
-  --primary-mint-hover: #81C784;
-  --primary-mint-light: #E8F5E9;
+  --nivi-background: #F7EFC6;
+  --nivi-text: #4B1D45;
+  --nivi-accent: #12B892;
+  --ion-background-color: var(--nivi-background);
+  --ion-text-color: var(--nivi-text);
+  --ion-color-primary: var(--nivi-accent);
+  --ion-color-primary-rgb: 18, 184, 146;
+  --ion-color-primary-contrast: #241022;
+  --ion-color-primary-shade: #10a280;
+  --ion-color-primary-tint: #2ac09d;
+  --primary-mint: #29c6a1;
+  --primary-mint-hover: #20bd98;
+  --primary-mint-light: #e0f6ef;
   --accent-pink: #F8BBD0;
   --accent-pink-hover: #F48FB1;
   --accent-pink-light: #FCE4EC;
-  --text-dark: #2C3E50;
+  --text-dark: var(--nivi-text);
   --text-muted: #5A6B7C;
   --bg-card: #FFFFFF;
 }
 
 body {
-  background: linear-gradient(135deg, #FFF0F5 0%, #F5FFFA 50%, #F0FFF0 100%) no-repeat fixed;
+  background: var(--nivi-background);
   background-size: cover;
   min-height: 100vh;
   font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;

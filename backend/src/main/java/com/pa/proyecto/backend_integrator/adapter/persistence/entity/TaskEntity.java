@@ -13,5 +13,10 @@ public class TaskEntity {
  @Enumerated(EnumType.STRING) @Column(nullable=false) private TaskStatus status;
  private java.time.LocalDateTime finishedAt;
  private java.time.LocalDateTime createdAt;
+ @Enumerated(EnumType.STRING) @Column(nullable=false, columnDefinition="varchar(20) default 'MANUAL'")
+ private TaskSource source = TaskSource.MANUAL;
+ @Enumerated(EnumType.STRING) @Column(nullable=false, columnDefinition="varchar(20) default 'GENERAL'")
+ private TaskCategory category = TaskCategory.GENERAL;
+ private java.util.UUID clientRequestId;
  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="project_id",nullable=false) private ProjectEntity project;
 }

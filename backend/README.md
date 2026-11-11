@@ -21,12 +21,15 @@ La cuenta local es única y se configura en el servidor. No hay registro, refres
 - GET /projects/recent-tasks
 - GET y POST /projects/{projectId}/tasks
 - GET y PUT /projects/{projectId}/tasks/{taskId}
+- DELETE /projects/{projectId}/tasks/{taskId} (204; PR 01)
 
 GET /projects acepta status, startDate, endDate y limit opcionales. limit admite valores de 1 a 100 y se aplica en SQL; sin él se conserva el listado completo. Se ordena por ID descendente. Las respuestas de proyecto agregan totalTasks y completedTasks a sus campos anteriores. El listado usa una proyección y agregados, sin cargar entidades ni colecciones de tareas. Home solicita limit=3 y la actividad reciente retorna hasta cuatro tareas.
 
 DELETE devuelve 204 y elimina las tareas asociadas dentro de la misma transacción. Recursos inexistentes o tareas ajenas al proyecto devuelven 404. Datos inválidos (incluidas horas fraccionarias y textos de más de 255 caracteres) devuelven 400; duplicados y operaciones sobre tareas de proyectos cerrados, 409. Los errores conservan {error, message} y agregan code para distinguir validación, duplicados y reglas de negocio.
 
-PUT admite cambios parciales y conserva los campos omitidos. En tareas, assignee omitido conserva la asignación y null explícito la elimina. En proyectos, una descripción vacía permite borrar su contenido; null u omisión conserva el valor. La edición no cambia estados.
+PUT admite cambios parciales y conserva los campos omitidos. En tareas, assignee omitido conserva la asignación y null explícito la elimina. PR 01 agrega edición de status/category: completar fija finishedAt, completar de nuevo lo conserva y reabrir lo elimina. No se permite borrar tareas de proyectos cerrados ni operar sobre tareas de otro proyecto. En proyectos, una descripción vacía permite borrar su contenido; null u omisión conserva el valor. La edición de proyectos no cambia estados.
+
+POST y respuestas de tarea incorporan source (MANUAL/VOZ/OCR/QR), category (GENERAL/COMPRAS/SALUD/ESTUDIO/TRABAJO/OTRA) y clientRequestId (UUID opcional y único). Defaults para clientes/tareas antiguas: MANUAL/GENERAL. Repetir el UUID dentro del mismo proyecto devuelve la tarea actual (201), sin crear otra ni aplicar cambios del replay. Un UUID de otro proyecto devuelve 409. La consulta y el alta con clave se serializan mediante un bloqueo de fila del proyecto; no hay cola durable ni sincronización todavía. Ver [contrato PR 01 y migración](../docs/pr01-base.md).
 
 ## Datos y arquitectura
 
@@ -36,4 +39,4 @@ El script H2 endurece columnas y normaliza el estado histórico COMPLETED a DONE
 
 El núcleo no depende de Spring, JPA ni Jackson. Los adaptadores convierten entidades a objetos independientes de la sesión. La consulta individual de proyecto conserva sus tareas; los listados devuelven ProjectSummary con contadores. Las transacciones abarcan las operaciones HTTP y los adaptadores de persistencia. Las pruebas incluyen contrato HTTP, JWT real, cascada, rollback, restricciones de esquema y consultas sin hidratación de entidades.
 
-El SQL de arranque es específico de H2 y no reemplaza un sistema de migraciones versionadas. No se cambió de motor de datos.
+El SQL de arranque es específico de H2 y no reemplaza un sistema de migraciones versionadas. PR 01 agrega db/pr01-task-metadata.sql, repetible y aditivo, y un rollback manual en db/rollback/. Respaldar antes de actualizar: el rollback conserva tareas pero elimina los nuevos metadatos. No se cambió de motor de datos.

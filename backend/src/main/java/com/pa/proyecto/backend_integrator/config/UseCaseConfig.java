@@ -47,8 +47,8 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public UpdateTaskUseCase updateTaskUseCase(ITaskRepository taskRepository) {
-        return new UpdateTaskUseCase(taskRepository);
+    public UpdateTaskUseCase updateTaskUseCase(ITaskRepository taskRepository, Clock clock) {
+        return new UpdateTaskUseCase(taskRepository, clock);
     }
 
 }

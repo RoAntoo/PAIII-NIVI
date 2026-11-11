@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+frontend/android/gradlew text eol=lf
+frontend/android/gradlew.bat text eol=crlf

@@ -13,8 +13,9 @@ final class PersistenceMapper {
  }
  static Task task(TaskEntity e) { return taskFields(e,projectFields(e.getProject())); }
  private static Task taskFields(TaskEntity e,Project p) {
-  Task t=new Task();t.setId(e.getId());t.setTitle(e.getTitle());t.setEstimateHours(e.getEstimateHours());t.setAssignee(e.getAssignee());t.setStatus(e.getStatus());t.setCreatedAt(e.getCreatedAt());t.setFinishedAt(e.getFinishedAt());t.setProject(p);return t;
+  Task t=new Task();t.setId(e.getId());t.setTitle(e.getTitle());t.setEstimateHours(e.getEstimateHours());t.setAssignee(e.getAssignee());t.setStatus(e.getStatus());t.setCreatedAt(e.getCreatedAt());t.setFinishedAt(e.getFinishedAt());t.setProject(p);
+  t.setSource(e.getSource());t.setCategory(e.getCategory());t.setClientRequestId(e.getClientRequestId());return t;
  }
  static void copy(Project p,ProjectEntity e) {e.setName(p.getName());e.setStartDate(p.getStartDate());e.setEndDate(p.getEndDate());e.setStatus(p.getStatus());e.setDescription(p.getDescription());}
- static void copy(Task t,TaskEntity e) {e.setTitle(t.getTitle());e.setEstimateHours(t.getEstimateHours());e.setAssignee(t.getAssignee());e.setStatus(t.getStatus());e.setCreatedAt(t.getCreatedAt());e.setFinishedAt(t.getFinishedAt());}
+ static void copy(Task t,TaskEntity e) {e.setTitle(t.getTitle());e.setEstimateHours(t.getEstimateHours());e.setAssignee(t.getAssignee());e.setStatus(t.getStatus());e.setCreatedAt(t.getCreatedAt());e.setFinishedAt(t.getFinishedAt());e.setSource(t.getSource());e.setCategory(t.getCategory());e.setClientRequestId(t.getClientRequestId());}
 }

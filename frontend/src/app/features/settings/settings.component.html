@@ -1,0 +1,41 @@
+<section class="card p-4 mx-auto" style="max-width: 48rem" aria-labelledby="settings-title">
+  <h1 id="settings-title">Ajustes de NIVI</h1>
+  <p>Guardá tus preferencias para los próximos módulos. La carga manual de tareas sigue disponible.</p>
+  <p class="text-muted">Estos ajustes no conceden permisos del dispositivo. Cada función los pedirá al usarla.</p>
+  @if (preferences.error()) {
+    <div role="alert" class="alert alert-danger">
+      {{ preferences.error() }}
+      <button class="btn btn-outline-secondary ms-2" type="button" (click)="preferences.reload()"
+              [disabled]="preferences.loading() || preferences.saving()">Recuperar ajustes</button>
+      @if (preferences.corrupted()) {
+        <button class="btn btn-outline-danger ms-2" type="button" (click)="confirmingReset.set(true)"
+                [disabled]="preferences.loading() || preferences.saving()">Restablecer ajustes</button>
+      }
+    </div>
+  }
+  @if (preferences.loading()) { <p role="status">Cargando ajustes…</p> }
+  <fieldset [disabled]="preferences.loading() || preferences.saving() || !preferences.loaded()">
+    <legend class="fs-5">Módulos opcionales</legend>
+    @for (module of modules; track module.key) {
+      <div class="border-bottom py-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" [id]="module.key"
+                 [checked]="preferences.settings()[module.key]" [attr.aria-describedby]="module.key + '-status'"
+                 (change)="change(module.key, $event)">
+          <label class="form-check-label fw-semibold" [for]="module.key">{{ module.label }}</label>
+        </div>
+        <p class="small mb-0 mt-1" [id]="module.key + '-status'">
+          {{ capabilities.status(module, preferences.settings()) }}
+        </p>
+      </div>
+    }
+  </fieldset>
+  <p class="small mt-3 mb-0" role="status" aria-live="polite">
+    {{ preferences.saving() ? 'Guardando preferencia…' : 'Las preferencias se guardan en este dispositivo.' }}
+  </p>
+</section>
+@if (confirmingReset()) {
+  <app-confirmation-modal title="Restablecer ajustes" message="¿Querés reemplazar los ajustes inválidos por los valores iniciales?"
+    warningText="Se reemplazarán las preferencias guardadas en este dispositivo." confirmText="Restablecer"
+    [isLoading]="preferences.saving()" (confirm)="confirmReset()" (cancel)="confirmingReset.set(false)" />
+}

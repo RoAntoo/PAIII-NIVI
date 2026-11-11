@@ -7,6 +7,17 @@ public final class UpdateTaskDTO {
     private Integer estimateHours;
     private String assignee;
     private boolean assigneePresent;
+    private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
+    private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
+
+    /** Returns the optional replacement status. */
+    public com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status() { return status; }
+    /** Supplies a replacement status; null preserves the existing status. */
+    public void setStatus(com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status) { this.status = status; }
+    /** Returns the optional replacement category. */
+    public com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category() { return category; }
+    /** Supplies a replacement category; null preserves the existing category. */
+    public void setCategory(com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category) { this.category = category; }
 
     /** Creates an empty update for the caller's property-based deserialization. */
     public UpdateTaskDTO() {}

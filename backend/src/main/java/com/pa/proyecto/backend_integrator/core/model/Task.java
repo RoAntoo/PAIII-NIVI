@@ -2,6 +2,8 @@ package com.pa.proyecto.backend_integrator.core.model;
 
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
 import com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus;
+import com.pa.proyecto.backend_integrator.core.model.enums.TaskSource;
+import com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,6 +22,9 @@ public class Task {
     private String assignee;
 
     private TaskStatus status;
+    private TaskSource source = TaskSource.MANUAL;
+    private TaskCategory category = TaskCategory.GENERAL;
+    private java.util.UUID clientRequestId;
 
     private LocalDateTime finishedAt;
     private LocalDateTime createdAt;
