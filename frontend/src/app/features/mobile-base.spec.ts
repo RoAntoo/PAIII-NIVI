@@ -21,6 +21,73 @@ describe('mobile base screens', () => {
   });
   afterEach(() => { http.verify(); localStorage.clear(); vi.useRealTimers(); });
 
+  it('reuses the same creation key after status 0 even if the task list is still empty', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(CreateTaskComponent);
+    fixture.detectChanges();
+    vi.useFakeTimers();
+    const component = fixture.componentInstance;
+    component.form.patchValue({ title: task.title, estimateHours: 1 });
+    component.onSubmit();
+    const first = http.expectOne(path);
+    const body = first.request.body;
+    first.error(new ProgressEvent('error'));
+    expect(component.errorMessage()).toContain('No pudimos confirmar');
+    expect(component.form.disabled).toBe(true);
+    const list = TestBed.createComponent(TaskListComponent);
+    list.detectChanges();
+    http.expectOne(path).flush([]); // Initial request may still be processing on the server.
+    component.onSubmit();
+    const retry = http.expectOne(path);
+    expect(retry.request.body).toEqual(body);
+    expect(body.clientRequestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(navigate).not.toHaveBeenCalled();
+    retry.flush({ ...task, clientRequestId: body.clientRequestId });
+    vi.advanceTimersByTime(2000);
+    expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it('sends explicitly touched fields on retry even when reverted to their original values', () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(UpdateTaskComponent);
+    fixture.detectChanges();
+    http.expectOne(`${path}/34`).flush({ ...task, category: 'GENERAL' });
+    const component = fixture.componentInstance;
+    component.form.patchValue({ status: 'DONE', category: 'COMPRAS' });
+    component.form.controls.status.markAsDirty();
+    component.form.controls.category.markAsDirty();
+    component.onSubmit();
+    http.expectOne(`${path}/34`).error(new ProgressEvent('error')); // Server may have committed DONE/COMPRAS.
+    component.form.patchValue({ status: 'TODO', category: 'GENERAL' });
+    component.onSubmit();
+    const retry = http.expectOne(`${path}/34`);
+    expect(retry.request.body.status).toBe('TODO');
+    expect(retry.request.body.category).toBe('GENERAL');
+    expect(navigate).not.toHaveBeenCalled();
+    retry.flush({ ...task, category: 'GENERAL' });
+    expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it('asks for confirmation before resetting corrupt preferences', async () => {
+    const storage = TestBed.inject(SETTINGS_STORAGE);
+    vi.spyOn(storage, 'get').mockResolvedValue({ value: '{' });
+    const save = vi.spyOn(storage, 'set').mockResolvedValue(undefined);
+    const fixture = TestBed.createComponent(SettingsComponent);
+    await fixture.componentInstance.preferences.ready;
+    fixture.detectChanges();
+    const reset = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find(button => button.textContent?.includes('Restablecer ajustes'))!;
+    reset.click(); fixture.detectChanges();
+    expect(save).not.toHaveBeenCalled();
+    (fixture.nativeElement.querySelector('.btn-modal-cancel') as HTMLButtonElement).click(); fixture.detectChanges();
+    expect(save).not.toHaveBeenCalled();
+    reset.click(); fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.btn-modal-confirm') as HTMLButtonElement).click();
+    await fixture.whenStable(); fixture.detectChanges();
+    expect(save).toHaveBeenCalledOnce();
+    expect(fixture.nativeElement.querySelector('fieldset').disabled).toBe(false);
+  });
+
   it('reconciles a task already absent on the server when deletion returns 404', () => {
     const fixture = TestBed.createComponent(TaskListComponent);
     fixture.detectChanges();

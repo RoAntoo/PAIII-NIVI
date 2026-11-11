@@ -73,7 +73,7 @@ export class UpdateTaskComponent implements OnInit {
     });
   }
 
-  /** Saves edits, including status/category only when they differ from the loaded task. */
+  /** Saves changed or explicitly touched status/category, preserving user intent across uncertain retries. */
   onSubmit(): void {
     if (this.isSaving() || this.form.invalid || !this.task()) { this.form.markAllAsTouched(); return; }
 
@@ -87,8 +87,8 @@ export class UpdateTaskComponent implements OnInit {
         title: title!.trim(),
         estimateHours: estimateHours!,
         assignee: assignee?.trim() || null,
-        ...(status !== this.task()!.status ? { status: status! } : {}),
-        ...(category !== this.task()!.category ? { category: category! } : {}),
+        ...(this.form.controls.status.dirty || status !== this.task()!.status ? { status: status! } : {}),
+        ...(this.form.controls.category.dirty || category !== this.task()!.category ? { category: category! } : {}),
       })
       .subscribe({
         next: () => {

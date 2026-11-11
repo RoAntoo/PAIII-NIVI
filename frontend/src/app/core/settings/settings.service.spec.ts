@@ -77,4 +77,36 @@ describe('persisted module settings', () => {
     await service.set('enableOcr', false);
     expect(JSON.parse(storage.set.mock.calls[0][0].value)).toEqual({ ...stored, enableOcr: false });
   });
+
+  it('requires confirmation to reset corrupt data and unlocks only after a successful write', async () => {
+    const storage = { get: vi.fn().mockResolvedValue({ value: '{' }),
+      set: vi.fn().mockRejectedValueOnce(new Error('Write failed')).mockResolvedValue(undefined) };
+    TestBed.configureTestingModule({ providers: [{ provide: SETTINGS_STORAGE, useValue: storage }] });
+    const service = TestBed.inject(SettingsService);
+    await service.ready;
+    expect(service.corrupted()).toBe(true);
+    await service.reload();
+    expect(service.corrupted()).toBe(true);
+    await service.resetCorrupted(false);
+    expect(storage.set).not.toHaveBeenCalled();
+    await service.resetCorrupted(true);
+    expect(service.loaded()).toBe(false);
+    expect(service.corrupted()).toBe(true);
+    await service.resetCorrupted(true);
+    expect(service.loaded()).toBe(true);
+    expect(service.corrupted()).toBe(false);
+    expect(service.settings()).toEqual(DEFAULT_SETTINGS);
+    await service.set('enableVoice', false);
+    expect(service.settings().enableVoice).toBe(false);
+  });
+
+  it('does not offer or execute reset for transient read errors', async () => {
+    const storage = { get: vi.fn().mockRejectedValue(new Error('Unavailable')), set: vi.fn() };
+    TestBed.configureTestingModule({ providers: [{ provide: SETTINGS_STORAGE, useValue: storage }] });
+    const service = TestBed.inject(SettingsService);
+    await service.ready;
+    expect(service.corrupted()).toBe(false);
+    await service.resetCorrupted(true);
+    expect(storage.set).not.toHaveBeenCalled();
+  });
 });

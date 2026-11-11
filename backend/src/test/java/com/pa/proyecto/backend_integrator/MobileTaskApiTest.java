@@ -18,6 +18,7 @@ class MobileTaskApiTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired com.pa.proyecto.backend_integrator.core.usecase.CreateTaskUseCase createTasks;
 
     String project() throws Exception {
         String body = """
@@ -68,7 +69,7 @@ class MobileTaskApiTest {
         mvc.perform(get("/projects/recent-tasks")).andExpect(jsonPath("$[0].task.category").value("COMPRAS"));
     }
 
-    @Test void invalidMetadataAndDuplicateClientIdAreRejectedWithoutPartialWrites() throws Exception {
+    @Test void invalidMetadataIsRejectedAndDuplicateClientIdReplaysWithoutPartialWrites() throws Exception {
         String p = project(), t = task(p, ""), clientId = java.util.UUID.randomUUID().toString();
         for (String invalid : new String[]{"{\"title\":\" \"}", "{\"category\":\"INVALID\"}",
                 "{\"status\":null}", "{\"category\":null}", "{\"title\":\"Changed\",\"estimateHours\":1.5}"}) {
@@ -78,8 +79,39 @@ class MobileTaskApiTest {
         task(p, ",\"clientRequestId\":\"" + clientId + "\"");
         mvc.perform(post(p + "/tasks").contentType("application/json").content(
                 "{\"title\":\"Duplicate\",\"estimateHours\":1,\"status\":\"TODO\",\"clientRequestId\":\"" + clientId + "\"}"))
-                .andExpect(status().isConflict());
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.title").value("Comprar tornillos"));
         mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test void simultaneousCreatesWithSameKeyReturnOneTask() throws Exception {
+        String p = project();
+        long projectId = Long.parseLong(p.substring("/projects/".length()));
+        var key = java.util.UUID.randomUUID();
+        var dto = new com.pa.proyecto.backend_integrator.core.input.DTO.CreateTaskDTO("Concurrent", 1, null,
+                com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus.TODO, null, null, key);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            java.util.concurrent.Callable<Long> create = () -> { start.await(); return createTasks.createTask(projectId, dto).getId(); };
+            var first = pool.submit(create);
+            var second = pool.submit(create);
+            start.countDown();
+            assertEquals(first.get(10, java.util.concurrent.TimeUnit.SECONDS), second.get(10, java.util.concurrent.TimeUnit.SECONDS));
+        }
+        mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test void replayReturnsCurrentTaskEvenAfterEditOrProjectClosureAndRejectsForeignProject() throws Exception {
+        String p = project(), key = java.util.UUID.randomUUID().toString();
+        String t = task(p, ",\"clientRequestId\":\"" + key + "\"");
+        mvc.perform(put(t).contentType("application/json").content("{\"title\":\"Edited later\"}"))
+                .andExpect(status().isOk());
+        jdbc.update("update projects set status='CLOSED' where id=?", Long.parseLong(p.substring("/projects/".length())));
+        String payload = "{\"title\":\"Original\",\"estimateHours\":1,\"status\":\"TODO\",\"clientRequestId\":\"" + key + "\"}";
+        mvc.perform(post(p + "/tasks").contentType("application/json").content(payload))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.title").value("Edited later"));
+        mvc.perform(post(project() + "/tasks").contentType("application/json").content(payload))
+                .andExpect(status().isConflict());
+        mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test void foreignAndClosedProjectTasksCannotBeDeletedOrCompleted() throws Exception {

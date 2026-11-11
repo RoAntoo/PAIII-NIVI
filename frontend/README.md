@@ -33,7 +33,7 @@ npm run android:run
 
 Los scripts Android exigen una API absoluta, preparan solo el bundle generado y conservan public/runtime-config.js. HTTPS por defecto; HTTP solo debug con opt-in. Para release, quitar NIVI_ALLOW_HTTP y usar una API HTTPS. CORS debe permitir el origen https://localhost del WebView.
 
-La guía completa de SDK, JDK, red local, permisos y checklist está en [android-setup.md](../docs/android-setup.md). El proyecto fue generado/sincronizado, pero el APK y las pruebas físicas quedan pendientes porque el entorno de implementación no tiene SDK Android configurado.
+La guía completa de SDK, JDK, red local, permisos y checklist está en [android-setup.md](../docs/android-setup.md). El proyecto fue generado/sincronizado y el APK debug se compiló con SDK 36, AGP 9.5.1, Gradle 9.6.0 y JDK 21. Firma verificada; ejecución en dispositivo pendiente.
 
 ## Servicios y pruebas
 
@@ -43,4 +43,4 @@ SettingsService persiste seis flags con Preferences (SharedPreferences nativo, l
 
 Bootstrap y Bootstrap Icons se empaquetan localmente; no se requieren CDN para mostrar la interfaz. El CRUD necesita conexión hasta PR 05. La paleta usa los tokens NIVI sin rediseñar las páginas existentes.
 
-Verificación PR 01: 41 tests frontend y build de producción aprobados; detalles y limitaciones en [pr01-base.md](../docs/pr01-base.md). Si Vitest falla con EPERM en temporales, crear .angular/test-temp y configurar TEMP/TMP a esa ruta para repetir. Persisten warnings de tamaño CSS y uno de tamaño inicial por los recursos locales. npm audit reportó 60 alertas; su corrección queda en una revisión de dependencias separada.
+Verificación PR 01: 46 tests frontend y build de producción aprobados; detalles y limitaciones en [pr01-base.md](../docs/pr01-base.md). Si Vitest falla con EPERM en temporales, crear .angular/test-temp y configurar TEMP/TMP a esa ruta para repetir. Persisten warnings de tamaño CSS y uno de tamaño inicial por los recursos locales. npm audit reportó 60 alertas; su corrección queda en una revisión de dependencias separada.

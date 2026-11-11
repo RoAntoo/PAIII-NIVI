@@ -29,7 +29,7 @@ DELETE devuelve 204 y elimina las tareas asociadas dentro de la misma transacci�
 
 PUT admite cambios parciales y conserva los campos omitidos. En tareas, assignee omitido conserva la asignación y null explícito la elimina. PR 01 agrega edición de status/category: completar fija finishedAt, completar de nuevo lo conserva y reabrir lo elimina. No se permite borrar tareas de proyectos cerrados ni operar sobre tareas de otro proyecto. En proyectos, una descripción vacía permite borrar su contenido; null u omisión conserva el valor. La edición de proyectos no cambia estados.
 
-POST y respuestas de tarea incorporan source (MANUAL/VOZ/OCR/QR), category (GENERAL/COMPRAS/SALUD/ESTUDIO/TRABAJO/OTRA) y clientRequestId (UUID opcional y único). Defaults para clientes/tareas antiguas: MANUAL/GENERAL. Duplicar el UUID devuelve 409 DATA_CONFLICT; no hay replay idempotente ni sincronización todavía. Ver [contrato PR 01 y migración](../docs/pr01-base.md).
+POST y respuestas de tarea incorporan source (MANUAL/VOZ/OCR/QR), category (GENERAL/COMPRAS/SALUD/ESTUDIO/TRABAJO/OTRA) y clientRequestId (UUID opcional y único). Defaults para clientes/tareas antiguas: MANUAL/GENERAL. Repetir el UUID dentro del mismo proyecto devuelve la tarea actual (201), sin crear otra ni aplicar cambios del replay. Un UUID de otro proyecto devuelve 409. La consulta y el alta con clave se serializan mediante un bloqueo de fila del proyecto; no hay cola durable ni sincronización todavía. Ver [contrato PR 01 y migración](../docs/pr01-base.md).
 
 ## Datos y arquitectura
 

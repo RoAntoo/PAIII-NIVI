@@ -5,9 +5,9 @@ El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Pr
 ## Requisitos
 
 - Node.js 24 (Capacitor requiere 22 o posterior).
-- JDK 21 y Android Studio 2025.2.1 o posterior compatible con AGP 8.13.0.
+- JDK 21 y Android Studio compatible con el AGP configurado. Build debug verificado localmente con AGP 9.5.1 y Android Studio instalado.
 - SDK Android Platform 36, Build Tools, Platform Tools y un emulador o celular con depuración USB. SDK mínimo de la app: API 24 (Android 7).
-- Gradle Wrapper 8.14.3 incluido. Su primera ejecución y la descarga de dependencias requieren internet.
+- Gradle Wrapper 9.6.0 incluido. Su primera ejecución y la descarga de dependencias requieren internet.
 - Backend Java 21 y H2 con las variables de autenticación del README configuradas. `.env.example` es referencia: no se carga automáticamente.
 
 La configuración concreta del template instalado está en `frontend/android/variables.gradle` y `gradle/wrapper/gradle-wrapper.properties`. No instalar plugins de los PR siguientes todavía.
@@ -62,7 +62,7 @@ Remove-Item Env:NIVI_ALLOW_HTTP -ErrorAction SilentlyContinue
 npm run android:sync
 ```
 
-El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada pero su ejecución Gradle queda pendiente hasta disponer del SDK. Este PR no configura firma release ni Play Store.
+El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada; su ejecución de release aún no se validó. Este PR no configura firma release ni Play Store.
 
 Único permiso declarado: `INTERNET`. Preferences usa SharedPreferences sin permisos de ejecución. No se piden cámara, micrófono, ubicación ni notificaciones al iniciar. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
 
@@ -92,6 +92,6 @@ Completar en un celular real antes de aceptar PR 01:
 - [ ] Verificar que los módulos futuros indiquen su disponibilidad pendiente y que ninguno solicite permisos.
 - [ ] Verificar navegación Atrás, teclado, scroll y áreas táctiles en pantalla pequeña.
 
-**Estado de esta implementación:** proyecto generado y `cap sync android` aprobado con Preferences real registrado. La ejecución de `build-android.mjs` se detuvo con «No se encontró Android SDK»; no se generó APK, no se abrió Android Studio y no se comprobó un dispositivo físico. La lista anterior es un pendiente, no evidencia de pruebas realizadas.
+**Estado verificado (11/11/2026):** Android Studio y SDK 36 instalados. `cap sync android` y `assembleDebug` aprobados con Preferences real, JDK 21, AGP 9.5.1 y Gradle 9.6.0. APK en `frontend/android/app/build/outputs/apk/debug/app-debug.apk` (4,923,581 bytes), firma v2 verificada y nombre NIVI confirmado. El bundle usa `http://10.0.2.2:8081` para el backend del emulador; para celular físico debe recompilarse con la IP LAN o un backend HTTPS alcanzable. ADB no detecta dispositivos. La ejecución y el checklist físico siguen pendientes.
 
 Referencias oficiales consultadas: [entorno de Capacitor](https://capacitorjs.com/docs/getting-started/environment-setup), [instalación](https://capacitorjs.com/docs/getting-started), [configuración](https://capacitorjs.com/docs/config) y [Preferences](https://capacitorjs.com/docs/apis/preferences). Las versiones efectivas son las fijadas en este repositorio.

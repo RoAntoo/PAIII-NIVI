@@ -10,7 +10,7 @@ La referencia vigente es la implementación local del **PR 01**. El [diagnóstic
 - Proyectos con CRUD, filtros y contadores agregados. Home conserva limit=3 y consulta de cuatro tareas recientes.
 - Tareas con CRUD completo, categoría, origen, estados TODO/IN_PROGRESS/DONE y fecha de completado. Completar de nuevo conserva la fecha; reabrir la borra. No se permite crear, editar ni borrar tareas de proyectos cerrados.
 - Textos de hasta 255 caracteres, horas enteras positivas, actualizaciones parciales y borrado confirmado. Assignee omitido conserva el valor; null lo elimina.
-- Metadatos compatibles de tareas antiguas: MANUAL/GENERAL. UUID de cliente opcional y único como preparación para reintentos; todavía no hay replay idempotente ni sincronización.
+- Metadatos compatibles de tareas antiguas: MANUAL/GENERAL. UUID de cliente opcional y único, con replay de creación seguro incluso ante solicitudes concurrentes. La UI conserva clave/datos durante los reintentos del formulario; sin cola durable ni sincronización.
 - Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1. Nombre NIVI, appId ar.edu.nivi.app, proyecto Android generado y sincronizado.
 - Ajustes persistentes con seis flags. Los módulos futuros indican el PR pendiente. Lugares y offline desactivados inicialmente. Servicio de capacidades separado, sin permisos sensibles al iniciar.
 - Tokens NIVI y recursos Bootstrap/iconos empaquetados localmente. Se conserva el diseño general de las páginas.
@@ -24,9 +24,9 @@ Respaldar la base persistente antes de cambiar el esquema. El SQL sigue siendo e
 ## Verificación
 
 - Base inicial del PR 01: 19 pruebas frontend y 50 backend aprobadas.
-- Resultado actual: 41 pruebas frontend y 56 backend aprobadas; build Angular de producción y JAR backend aprobados.
+- Resultado actual: 46 pruebas frontend y 58 backend aprobadas; build Angular de producción y JAR backend aprobados.
 - Capacitor Android generado y sincronizado con Preferences real registrado.
-- La compilación del APK se detuvo por falta de SDK Android. No se abrió Android Studio ni se probaron Gradle/release o un celular físico. [Checklist pendiente](android-setup.md).
+- Android Studio y SDK 36 confirmados. APK debug compilado con AGP 9.5.1, Gradle 9.6.0 y JDK 21; firma APK v2 verificada. No hay celular/emulador conectado. Release y prueba física pendientes. [Checklist pendiente](android-setup.md).
 - Intento de verificación visual del servidor local: timeout en el navegador de pruebas. No se registra como prueba visual aprobada.
 - Se mantienen tres warnings CSS y se agrega uno de bundle inicial por los recursos locales (aprox. 829 kB; límite de error 1 MB conservado).
 - npm audit online: 60 alertas, 3 críticas, 27 altas, 25 moderadas y 5 bajas. Revisión de dependencias pendiente.
@@ -35,4 +35,4 @@ Respaldar la base persistente antes de cambiar el esquema. El SQL sigue siendo e
 
 ## Pendientes de alcance
 
-El código del PR 01 queda preparado para revisión, con aceptación Android pendiente de APK y prueba física. Voz (PR 02), cámara/OCR/QR (PR 03), lugares (PR 04), recordatorios y offline/sync (PR 05) no están implementados. El CRUD sigue requiriendo backend. Multiusuario, OpenAPI, paginación completa y gestión versionada de todas las migraciones siguen fuera de este incremento.
+El código del PR 01 queda preparado para revisión, con APK debug generado y aceptación Android pendiente de prueba física. Voz (PR 02), cámara/OCR/QR (PR 03), lugares (PR 04), recordatorios y offline/sync (PR 05) no están implementados. El CRUD sigue requiriendo backend. Multiusuario, OpenAPI, paginación completa y gestión versionada de todas las migraciones siguen fuera de este incremento.

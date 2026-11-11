@@ -31,15 +31,24 @@ export class SettingsService {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly loaded = signal(false);
+  readonly corrupted = signal(false);
   readonly ready = this.load();
 
   /** Loads saved flags; failed reads block writes until a successful reload. */
   private async load(): Promise<void> {
     this.loaded.set(false);
+    this.corrupted.set(false);
     try {
       const { value } = await this.storage.get({ key: STORAGE_KEY });
-      const stored: unknown = value ? JSON.parse(value) : {};
-      if (!stored || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('Invalid settings');
+      let stored: unknown;
+      try {
+        stored = value === null ? {} : JSON.parse(value);
+        if (!stored || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('Invalid settings');
+      } catch {
+        this.corrupted.set(true);
+        this.error.set('Los ajustes guardados tienen un formato inválido. Podés reintentar la lectura o restablecerlos con confirmación.');
+        return;
+      }
       const next = { ...DEFAULT_SETTINGS };
       for (const key of Object.keys(next) as (keyof NiviSettings)[]) {
         const entry = (stored as Record<string, unknown>)[key];
@@ -58,6 +67,21 @@ export class SettingsService {
     this.loading.set(true);
     this.error.set(null);
     await this.load();
+  }
+
+  /** Replaces an invalid record only after explicit confirmation; failed writes remain blocked. */
+  async resetCorrupted(confirmed: boolean): Promise<void> {
+    if (!confirmed || !this.corrupted() || this.loading() || this.saving()) return;
+    this.saving.set(true);
+    try {
+      await this.storage.set({ key: STORAGE_KEY, value: JSON.stringify(DEFAULT_SETTINGS) });
+      this.state.set({ ...DEFAULT_SETTINGS });
+      this.loaded.set(true);
+      this.corrupted.set(false);
+      this.error.set(null);
+    } catch {
+      this.error.set('No se pudieron restablecer los ajustes. Se conservó el bloqueo; podés reintentar.');
+    } finally { this.saving.set(false); }
   }
 
   /** Persists one flag only after a successful read, retaining saved state on failure. */

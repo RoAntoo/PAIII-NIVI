@@ -46,11 +46,11 @@ Se incorpora `DELETE /projects/{projectId}/tasks/{taskId}` → 204. Recursos fal
 |---|---|
 | source | MANUAL (default), VOZ, OCR, QR; se conserva al editar |
 | category | GENERAL (default), COMPRAS, SALUD, ESTUDIO, TRABAJO, OTRA |
-| clientRequestId | UUID opcional y único; null para tareas antiguas. Duplicado → 409 DATA_CONFLICT |
+| clientRequestId | UUID opcional y único; null para tareas antiguas. Repetición en el mismo proyecto → misma tarea (201); en otro proyecto → 409 |
 
 `PUT` ahora admite `status` y `category`; omitirlos conserva el valor y null explícito se rechaza. `assignee` omitido conserva el responsable; null lo elimina. Los endpoints de consulta y actividad reciente devuelven todos los campos anteriores más los metadatos nuevos.
 
-Los IDs primarios siguen siendo numéricos del servidor. `clientRequestId` prepara la identificación de futuras operaciones; la UI manual todavía no lo genera. **No se implementan replay idempotente, cola offline ni sincronización.** PR 05 deberá resolver reintentos/recuperación y concurrencia, sin tomar un 409 como éxito automático.
+Los IDs primarios siguen siendo numéricos del servidor. La UI genera un UUID por creación y conserva los datos originales durante los reintentos del formulario. Timeout, HTTP 0 y errores 5xx mantienen el resultado desconocido y ofrecen «Comprobar guardado» con la misma clave. Una lista vacía no confirma ausencia. El servidor devuelve la tarea actual asociada a esa clave sin aplicar cambios del replay, incluso si fue editada o el proyecto se cerró. Un bloqueo de fila del proyecto serializa consulta e inserción; el índice único protege también claves usadas entre proyectos. Se mantiene HTTP 201 por compatibilidad. No se agrega una migración: la columna UUID ya existe. La clave vive durante el formulario y el registro servidor existe mientras exista la tarea; no hay cola durable, tombstones ni sincronización. Salir del formulario e iniciar otra alta constituye una nueva creación. PR 05 deberá resolver persistencia de operaciones y borrados offline.
 
 `db/pr01-task-metadata.sql` se ejecuta después de Hibernate y antes de `required-columns.sql`. Agrega columnas, rellena exclusivamente los metadatos faltantes con MANUAL/GENERAL y crea un índice único para client_request_id. La migración admite repetición, no recrea tablas ni cambia IDs. Se prueba también contra un esquema anterior sin esas columnas.
 
@@ -60,10 +60,10 @@ Se conserva el contrato de fechas existente: los proyectos usan fecha sin hora; 
 
 ## Evidencia y pendientes
 
-- Frontend: `npm --prefix frontend test -- --watch=false` → **41 pruebas aprobadas**. Incluye restauración de ajustes con el adaptador web real, errores de storage, DTO antiguos, campos conservados, título vacío bloqueado, fallos de API, reintento y borrado confirmado.
-- Backend: desde backend, JDK 21 y `.\mvnw.cmd verify '-Dnivi.build.directory=target-audit'` → **56 pruebas aprobadas**, JAR generado. Incluye HTTP + JPA + H2 reales en tests, migración repetible/rollback, defaults, metadatos, restricción de UUID único, completar/reabrir y borrado, límites por proyecto y proyectos cerrados.
+- Frontend: `npm --prefix frontend test -- --watch=false` → **46 pruebas aprobadas**. Incluye restauración de ajustes con el adaptador web real, errores de storage, DTO antiguos, campos conservados, título vacío bloqueado, fallos de API, reintento y borrado confirmado.
+- Backend: desde backend, JDK 21 y `.\mvnw.cmd verify '-Dnivi.build.directory=target-audit'` → **58 pruebas aprobadas**, JAR generado. Incluye HTTP + JPA + H2 reales en tests, migración repetible/rollback, defaults, metadatos, restricción de UUID único, completar/reabrir y borrado, límites por proyecto y proyectos cerrados.
 - Web: `npm --prefix frontend run build` → aprobado. Se mantienen tres warnings de presupuesto de CSS de componentes; aparece además un warning de bundle inicial (aprox. 829 kB frente a 500 kB) por incluir los estilos e iconos locales. El límite de error de 1 MB no se modificó.
-- Android: `cap add android` y `cap sync android` → aprobados, plugin Preferences registrado. Intento de compilación detenido por ausencia del SDK. **No hay APK generado, Gradle/release verificados ni prueba en Android Studio/celular.**
+- Android: `cap add android` y `cap sync android` → aprobados, plugin Preferences registrado. El primer intento se detuvo por ausencia del SDK. Tras instalar Android Studio y SDK 36, `assembleDebug` aprobó con AGP 9.5.1, Gradle 9.6.0 y JDK 21 (119 tareas). Se actualizó la referencia ProGuard al archivo optimize para compatibilidad con AGP 9. Firma APK v2 verificada, nombre NIVI, appId ar.edu.nivi.app, minSdk 24 y targetSdk 36. **Release y ejecución en celular/emulador pendientes: ADB no detecta dispositivos.**
 - Configuración del bundle Android: seis comprobaciones locales aprobadas (URL obligatoria, rechazo de HTTP sin opt-in, credenciales/query rechazadas, HTTPS y HTTP debug aceptados); configuración web pública conservada.
 - Navegador: el intento de abrir el servidor local desde la herramienta de navegador terminó en timeout; no se registra como validación visual.
 - `npm audit` online: **60 alertas (3 críticas, 27 altas, 25 moderadas, 5 bajas)**. No se ejecutó `npm audit fix` ni se actualizó todo el stack. Se requiere una revisión de dependencias separada; este resultado no certifica ausencia de problemas en producción.
@@ -76,8 +76,9 @@ Se conserva el contrato de fechas existente: los proyectos usan fecha sin hora; 
 - [x] Ajustes persistentes y capacidades con módulos futuros claramente identificados.
 - [x] Contrato compatible, migración y CRUD cubiertos por pruebas automatizadas.
 - [x] Documentación de variables, conectividad y build reproducible.
-- [ ] Compilar e instalar APK con SDK Android disponible.
+- [x] Compilar APK debug y verificar firma.
+- [ ] Instalar APK en un dispositivo.
 - [ ] Verificar CRUD, API y preferencias en celular físico; adjuntar modelo/Android/capturas.
 - [ ] Revisión y aceptación final del PR.
 
-El código está preparado para revisión; **PR 01 no cumple todavía los criterios de aceptación Android** hasta completar esas verificaciones. Voz, OCR, QR, lugares, notificaciones y sincronización quedan para PR 02–05.
+El código está preparado para revisión; **PR 01 no cumple todavía los criterios de aceptación Android** hasta completar la prueba física. Voz, OCR, QR, lugares, notificaciones y sincronización quedan para PR 02–05.

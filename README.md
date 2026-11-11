@@ -2,7 +2,7 @@
 
 Aplicación Angular 21 + Ionic 9 + Capacitor 8 con API Java 21 / Spring Boot 3.5.7. El estado vigente y las decisiones de alcance están en [docs/ESTADO_ACTUAL.md](docs/ESTADO_ACTUAL.md).
 
-PR 01 incorpora el proyecto Android y ajustes persistentes. Consultar [configuración Android](docs/android-setup.md), [diagnóstico y pruebas](docs/pr01-base.md) y [descripción del PR](docs/PR01.md). La generación de APK y la prueba en celular están pendientes por falta de SDK Android en el entorno de implementación.
+PR 01 incorpora el proyecto Android y ajustes persistentes. Consultar [configuración Android](docs/android-setup.md), [diagnóstico y pruebas](docs/pr01-base.md) y [descripción del PR](docs/PR01.md). El APK debug ya se generó y su firma fue verificada; la prueba en celular sigue pendiente.
 
 - **frontend/**: funcionalidades de proyectos, tareas, inicio y autenticación.
 - **backend/**: dominio independiente de Spring/JPA, casos de uso y adaptadores HTTP/persistencia.
