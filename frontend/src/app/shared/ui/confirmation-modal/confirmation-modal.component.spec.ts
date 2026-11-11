@@ -2,6 +2,23 @@ import { TestBed } from '@angular/core/testing';
 import { ConfirmationModalComponent } from './confirmation-modal.component';
 
 describe('confirmation dialog keyboard access', () => {
+  for (const initial of [true, false]) {
+    it(`restores Ionic scrolling when its initial vertical state is ${initial}`, async () => {
+      const content = document.createElement('ion-content') as HTMLElement & { scrollX: boolean; scrollY: boolean };
+      content.scrollX = true; content.scrollY = initial;
+      document.body.append(content);
+      const fixture = TestBed.createComponent(ConfirmationModalComponent);
+      content.append(fixture.nativeElement);
+      fixture.detectChanges(); await fixture.whenStable();
+      expect(content.scrollX).toBe(false);
+      expect(content.scrollY).toBe(false);
+      expect(document.body.style.overflow).toBe('hidden');
+      fixture.destroy();
+      expect(content.scrollX).toBe(true);
+      expect(content.scrollY).toBe(initial);
+      content.remove();
+    });
+  }
   it('labels the dialog, traps focus, handles Escape and restores the opener', async () => {
     const opener = document.createElement('button');
     document.body.append(opener); opener.focus();

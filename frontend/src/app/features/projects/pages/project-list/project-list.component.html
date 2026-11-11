@@ -11,7 +11,7 @@
       <label for="statusFilter" class="fw-semibold">
         <i class="bi bi-funnel text-pink"></i> Filtrar por estado:
       </label>
-      <select id="statusFilter" (change)="onFilterChange($event)">
+      <select #statusFilter id="statusFilter" (change)="onFilterChange($event)">
         <option value="TODOS">Todos los proyectos</option>
         <option value="PLANNED">Planificado (PLANNED)</option>
         <option value="ACTIVE">Activo (ACTIVE)</option>
@@ -93,6 +93,7 @@
     confirmLoadingText="Eliminando..."
     cancelText="Cancelar"
     [isLoading]="isDeleting()"
+    [restoreOpener]="restoreModalOpener()"
     (confirm)="confirmDelete()"
     (cancel)="cancelDelete()">
   </app-confirmation-modal>

@@ -5,6 +5,7 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  afterNextRender, Injector, ElementRef, viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LowerCasePipe } from '@angular/common';
@@ -22,6 +23,9 @@ import { ConfirmationModalComponent } from '../../../../shared/ui/confirmation-m
   styleUrl: './project-list.component.css',
 })
 export class ProjectListComponent implements OnInit {
+  private injector = inject(Injector);
+  private statusFilter = viewChild.required<ElementRef<HTMLSelectElement>>('statusFilter');
+  restoreModalOpener = signal(true);
   private projectService = inject(ProjectService);
 
   // Signals
@@ -50,10 +54,12 @@ export class ProjectListComponent implements OnInit {
     return allProjects.filter((p) => p.status === currentFilter);
   });
 
+  /** Loads projects on entry. */
   ngOnInit(): void {
     this.loadProjects();
   }
 
+  /** Refreshes the list while preserving an explicit loading/error state. */
   loadProjects(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -70,16 +76,20 @@ export class ProjectListComponent implements OnInit {
     });
   }
 
+  /** Updates the client-side status filter. */
   onFilterChange(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
     this.filterStatus.set(selectElement.value);
   }
 
+  /** Opens confirmation and enables focus restoration for cancellation. */
   deleteProject(id: number, name: string): void {
+    this.restoreModalOpener.set(true);
     this.projectToDelete.set({ id, name });
     this.isConfirmOpen.set(true);
   }
 
+  /** Deletes the selected project and moves focus to the stable filter after closing. */
   confirmDelete(): void {
     const project = this.projectToDelete();
     if (!project) return;
@@ -87,10 +97,12 @@ export class ProjectListComponent implements OnInit {
     this.isDeleting.set(true);
     this.projectService.deleteProject(project.id).subscribe({
       next: () => {
+        this.restoreModalOpener.set(false);
         this.isConfirmOpen.set(false);
         this.isDeleting.set(false);
         this.projectToDelete.set(null);
         this.loadProjects();
+        afterNextRender(() => this.statusFilter().nativeElement.focus(), { injector: this.injector });
       },
       error: (err: Error) => {
         this.isConfirmOpen.set(false);
@@ -101,6 +113,7 @@ export class ProjectListComponent implements OnInit {
     });
   }
 
+  /** Closes confirmation without deleting or changing the opener focus policy. */
   cancelDelete(): void {
     this.isConfirmOpen.set(false);
     this.projectToDelete.set(null);

@@ -53,6 +53,21 @@ describe('authentication', () => {
     expect(auth.isAuthenticated()).toBe(false);
   });
 
+  it('propagates a late 401 without clearing a newer login', () => {
+    sessionStorage.setItem('nivi.session', JSON.stringify(session()));
+    const auth = TestBed.inject(AuthService);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const failed = vi.fn();
+    TestBed.inject(ProjectService).getProjects().subscribe({ error: failed });
+    const oldRequest = http.expectOne(`${environment.apiUrl}/projects`);
+    auth.login({ username: 'user', password: 'new-password' }).subscribe();
+    http.expectOne(`${environment.apiUrl}/auth/login`).flush({ ...session(), accessToken: 'new-token' });
+    oldRequest.flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(auth.accessToken()).toBe('new-token');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(failed).toHaveBeenCalledOnce();
+  });
+
   it('rejects expired persisted sessions', () => {
     sessionStorage.setItem('nivi.session', JSON.stringify({ ...session(), expiresAt: '2000-01-01T00:00:00Z' }));
     expect(TestBed.inject(AuthService).isAuthenticated()).toBe(false);

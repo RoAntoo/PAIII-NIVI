@@ -64,7 +64,7 @@ describe('project and task flows', () => {
     expect(component.errorMessage()).toContain('CLOSED');
   });
 
-  it('cancels deletion without a request and refreshes the list after confirmation', () => {
+  it('cancels deletion without a request and refreshes the list after confirmation', async () => {
     const fixture = TestBed.createComponent(ProjectListComponent); fixture.detectChanges();
     http.expectOne(`${api}/projects`).flush([project]); fixture.detectChanges();
     const component = fixture.componentInstance;
@@ -79,6 +79,8 @@ describe('project and task flows', () => {
     http.expectOne(`${api}/projects`).flush([]); fixture.detectChanges();
     expect(component.projects()).toEqual([]);
     expect(fixture.nativeElement.querySelector('[role=dialog]')).toBeNull();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#statusFilter'));
   });
 
   it('requests only three projects and renders actual task progress', () => {

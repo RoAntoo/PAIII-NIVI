@@ -51,6 +51,8 @@ Desarrollo usa http://127.0.0.1:8081; producción usa /api. public/runtime-confi
 
 Bootstrap, iconos y fuentes se sirven desde CDN; la aplicación requiere conexión para esos recursos. Los directorios de compilación están ignorados y no se versionan.
 
+Si apiUrl apunta a un origen distinto del frontend, configurar CORS_ALLOWED_ORIGINS en el backend con el origen exacto del frontend (protocolo, host y puerto, sin ruta). Por defecto solo se permiten http://localhost:4200 y http://127.0.0.1:4200. Por ejemplo, para un cliente en https://nivi.example, usar CORS_ALLOWED_ORIGINS=https://nivi.example aunque la API esté en otro dominio.
+
 ## Integración Ionic — 11 de noviembre de 2026
 
 Ionic Angular 9.0.10 está configurado con componentes standalone y provideIonicAngular. La estructura principal usa IonApp, IonHeader, IonToolbar e IonContent; el acceso usa IonButton e IonSpinner. Los estilos de Ionic están incluidos y conservan la paleta Nivi. Bootstrap continúa dando formato a las páginas existentes.
