@@ -1,3 +1,5 @@
+> Contrato vigente complementado por [ESTADO_ACTUAL.md](../../ESTADO_ACTUAL.md). Autenticación: POST /auth/login y JWT Bearer para proyectos y tareas.
+
 # SPEC: Página de Inicio (Home) y Barra de Navegación Global
 
 **Nombre de la feature:**
@@ -11,8 +13,8 @@ Adicionalmente, el Home presenta un Dashboard dinámico compuesto por dos seccio
 2. **Sección de Actividad Reciente (Derecha):** Presenta un timeline cronológico interactivo que muestra las últimas 4 tareas añadidas a cualquier proyecto de la plataforma mediante consultas reactivas concurrentes.
 
 **Endpoints involucrados:**
-- **Proyectos:** `GET /projects` (Usado para listar los proyectos en la sección de resumen y recolectar sus IDs).
-- **Tareas por Proyecto:** `GET /projects/{projectId}/tasks` (Usado en paralelo para consultar las tareas de cada proyecto individualmente).
+- **Proyectos:** `GET /projects?limit=3` (campos del proyecto y contadores totalTasks/completedTasks calculados en la base).
+- **Actividad:** `GET /projects/recent-tasks` (hasta cuatro tareas con nombre e ID del proyecto).
 - **Navegación:** Redirección automática de rutas inexistentes (404) al Home.
 
 **Restricciones de negocio:**
@@ -23,10 +25,10 @@ Adicionalmente, el Home presenta un Dashboard dinámico compuesto por dos seccio
 - El timeline de actividad reciente debe limitar la visualización a las 4 tareas más recientes de todos los proyectos creados, ordenadas de más reciente a más antigua.
 
 **Lineamientos técnicos:**
-- **Framework:** Standalone components, Angular 17.
+- **Framework:** Standalone components, Angular 21.
 - **Navegación SPA:** `RouterModule` mediante `routerLink` y `<router-outlet>`.
 - **Rendimiento:** `ChangeDetectionStrategy.OnPush` en conjunto con el sistema de reactividad de Angular (`Signals`) para manejar el estado de carga y visualización de proyectos/tareas.
-- **Reactividad:** Uso de observables RxJS combinados mediante `forkJoin` para consultar de forma concurrente las tareas de todos los proyectos disponibles en el backend y aplanar el resultado final.
+- **Reactividad:** Uso de `forkJoin` para las dos consultas del resumen, independientemente de la cantidad de proyectos. El progreso es completedTasks / totalTasks y vale 0% cuando no hay tareas.
 - **Estilos:** Bootstrap 5 integrado mediante CDN en `index.html` para la estructura y rejilla, anulando su diseño base mediante una paleta personalizada de colores pasteles y animaciones CSS exclusivas del componente.
 
 **Lineamientos de diseño visual:**

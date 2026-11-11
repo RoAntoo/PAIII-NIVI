@@ -23,4 +23,6 @@ export interface ProjectResponse {
   endDate: string;
   status: ProjectStatus;
   description?: string;
+  totalTasks: number;
+  completedTasks: number;
 }

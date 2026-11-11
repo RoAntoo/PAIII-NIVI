@@ -1,3 +1,5 @@
+> Contrato vigente complementado por [ESTADO_ACTUAL.md](../../ESTADO_ACTUAL.md). Autenticación: POST /auth/login y JWT Bearer para proyectos y tareas.
+
 # SPEC: Crear un nuevo proyecto
 
 **Nombre de la feature:**

@@ -9,6 +9,8 @@ public record ProjectResponseDTO(
         LocalDate startDate,
         LocalDate endDate,
         ProjectStatus status,
-        String description
+        String description,
+        long totalTasks,
+        long completedTasks
 ) {
 }

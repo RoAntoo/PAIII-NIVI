@@ -1,0 +1,19 @@
+<section class="login-card" aria-labelledby="login-title">
+  <h1 id="login-title">Ingresar a Nivi</h1>
+  <p>Accedé a tus proyectos y tareas.</p>
+  @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+      <label for="login-username" class="form-label">Usuario</label>
+      <input id="login-username" class="form-control" formControlName="username" autocomplete="username" required>
+    </div>
+    <div class="mb-4">
+      <label for="login-password" class="form-label">Contraseña</label>
+      <input id="login-password" type="password" class="form-control" formControlName="password" autocomplete="current-password" required>
+    </div>
+    <ion-button type="submit" expand="block" [disabled]="loading() || form.invalid">
+      @if (loading()) { <ion-spinner name="crescent" aria-hidden="true"></ion-spinner> }
+      {{ loading() ? 'Ingresando...' : 'Iniciar sesión' }}
+    </ion-button>
+  </form>
+</section>

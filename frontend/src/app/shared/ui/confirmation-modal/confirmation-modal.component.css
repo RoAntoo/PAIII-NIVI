@@ -24,6 +24,8 @@
   margin: 20px;
   animation: scaleInCard 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.custom-modal-card:focus-visible, button:focus-visible { outline: 3px solid #2e7d32; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .custom-modal-header {
   display: flex;
   align-items: center;

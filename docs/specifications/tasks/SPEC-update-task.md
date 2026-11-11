@@ -1,3 +1,5 @@
+> Contrato vigente complementado por [ESTADO_ACTUAL.md](../../ESTADO_ACTUAL.md). Autenticación: POST /auth/login y JWT Bearer para proyectos y tareas.
+
 # SPEC.md — Feature: Actualizar una tarea
 
 ## Update-Task
@@ -38,19 +40,19 @@ Response 409: violación de regla de negocio
 - `assignee` es opcional; puede quedar vacío (se enviará como `null`).
 - **No se puede cambiar el `status` desde este formulario** — eso es responsabilidad de otra feature.
 - Si el proyecto está en estado `CLOSED`, el backend rechazará la operación (409); el frontend debe mostrar el error recibido sin reintentar.
-- Los campos `finishedAt`, `createdAt` y `status` son de solo lectura: se muestran informativamente pero no se editan aquí.
+- Los campos `finishedAt`, `createdAt` y `status` no se modifican con esta operación.
 
 ---
 
 ## Lineamientos técnicos
 
-- **Componente:** standalone, `ChangeDetectionStrategy.OnPush`, ubicado en `src/app/features/update-task/`.
+- **Componente:** standalone, `ChangeDetectionStrategy.OnPush`, ubicado en `frontend/src/app/features/tasks/pages/task-edit/`.
 - **Formulario:** Reactive Forms con validadores síncronos (`Validators.required`, `Validators.min(1)`).
-- **Servicio:** `task.service` en `src/app/service/task.service.ts` — métodos `getTask(projectId, taskId)` y `updateTask(projectId, taskId, dto)`.
+- **Servicio:** `task.service` en `frontend/src/app/features/tasks/data-access/task-api.service.ts` — métodos `getTask(projectId, taskId)` y `updateTask(projectId, taskId, dto)`.
 - **Routing:** ruta `/projects/:projectId/tasks/:taskId/edit`. Los params se leen con `ActivatedRoute`.
 - **Estado de carga:** signals locales para `isLoading`, `isSaving` y `errorMessage`.
 - **Estilos:** Bootstrap 5 (cargado de forma global vía CDN de jsDelivr en `index.html` para evitar dependencias locales npm y no sobrecargar el bundle final).
-- **Errores HTTP:** el interceptor JWT ya existente maneja el token; el componente solo maneja los errores de respuesta (400, 404, 409) mostrando el mensaje del backend.
+- **Errores HTTP:** el interceptor JWT de `frontend/src/app/core/auth/` maneja el token; el componente solo maneja los errores de respuesta (400, 404, 409) mostrando el mensaje del backend.
 - **Navegación post-guardado:** redirigir a `/projects/:projectId/tasks` (listado de tareas del proyecto) al completar exitosamente.
 
 ---

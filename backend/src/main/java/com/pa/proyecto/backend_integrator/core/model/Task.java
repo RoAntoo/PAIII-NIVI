@@ -24,12 +24,6 @@ public class Task {
     private LocalDateTime finishedAt;
     private LocalDateTime createdAt;
 
-    // --- ¡ACA ESTA DE FORMA EXPLICITA LA RELACION! ---
-    // Muchas Tareas pertenecen a Un Proyecto
-    // @JoinColumn le dice a JPA que esta tabla (tasks) tendrá una
-    // columna llamada 'project_id' que es la Foreign Key.
-
-
     private Project project;
 
 
@@ -54,9 +48,8 @@ public class Task {
         if (project == null) {
             throw new IllegalArgumentException("Project is required");
         }
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Task title is required");
-        }
+        title = TextRules.required(title, "Task title");
+        TextRules.optional(assignee, "Task assignee");
         if (estimateHours == null || estimateHours <= 0) {
             throw new IllegalArgumentException("Estimate hours must be greater than 0");
         }

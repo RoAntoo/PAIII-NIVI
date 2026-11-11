@@ -1,0 +1,9 @@
+:host { display: block; height: 100%; }
+ion-toolbar { --background: #ffffffdc; --padding-top: 0; --padding-bottom: 0; }
+ion-content { --background: linear-gradient(135deg, #fff0f5 0%, #f5fffa 50%, #f0fff0 100%); }
+.app-content { padding-top: 24px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+@media (max-width: 576px) {
+  .nav-links-custom { justify-content: center; width: 100%; flex-wrap: wrap; }
+  .nav-link-custom { padding: 8px 10px; font-size: 0.85rem; }
+  .navbar-brand-custom { margin: 0 auto 8px; }
+}

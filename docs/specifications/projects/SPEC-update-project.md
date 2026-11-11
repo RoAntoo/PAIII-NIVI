@@ -1,3 +1,5 @@
+> Contrato vigente complementado por [ESTADO_ACTUAL.md](../../ESTADO_ACTUAL.md). Autenticación: POST /auth/login y JWT Bearer para proyectos y tareas.
+
 # SPEC.md — Editar proyecto existente
 
 ## update-project
@@ -24,7 +26,7 @@ de los proyectos actualizada sin necesidad de eliminar y recrear.
 }
 ```
 - **Response 200 OK:** objeto `ProjectResponse` con los datos actualizados
-- **Response 400 Bad Request:** campo requerido ausente o fechas inválidas (`ValidationException`)
+- **Response 400 Bad Request:** campo requerido ausente o campos inválidos o textos de más de 255 caracteres
 - **Response 404 Not Found:** el proyecto con ese ID no existe (`ResourceNotFoundException`)
 - **Response 409 Conflict:** el nombre ya pertenece a otro proyecto (`DuplicateResourceException`)
 
@@ -33,9 +35,9 @@ de los proyectos actualizada sin necesidad de eliminar y recrear.
 ## Restricciones de negocio
 - `name` es obligatorio y debe ser único entre todos los proyectos. Si se envía un nombre
   ya usado por otro proyecto, el backend devuelve 409.
-- `endDate` debe ser mayor o igual a `startDate`. Si no se cumple, el backend devuelve 400.
-- `startDate` y `endDate` son obligatorios.
-- `description` es opcional; puede enviarse vacío o null.
+- `endDate` debe ser mayor o igual a `startDate`. Si no se cumple, el backend devuelve 409.
+- PUT acepta campos parciales; las fechas omitidas conservan los valores anteriores. El formulario envía ambas fechas.
+- `description` es opcional y admite hasta 255 caracteres. Vacío borra su contenido; null u omisión conserva el valor.
 - El `status` del proyecto no cambia con esta operación; el formulario no debe mostrarlo
   como campo editable.
 - Si el proyecto no existe, el backend devuelve 404 y el frontend debe redirigir o mostrar
@@ -47,8 +49,8 @@ de los proyectos actualizada sin necesidad de eliminar y recrear.
 - **Formulario:** Reactive Forms — validaciones síncronas en cliente (required, dateRange)
   y manejo de errores asincrónicos desde el servidor (409, 400)
 - **Estilos:** Bootstrap 5 (cargado de forma global vía CDN de jsDelivr en `index.html` para evitar dependencias locales npm y no duplicar estilos en el bundle)
-- **Comunicación:** `HttpClient` con interceptor JWT existente (`auth.interceptor.ts`)
-- **Servicio:** `ProjectService` en `src/app/services/` — método `updateProject(projectId, dto)`
+- **Comunicación:** `HttpClient` con interceptor JWT en `frontend/src/app/core/auth/auth.interceptor.ts`
+- **Servicio:** `ProjectService` en `frontend/src/app/features/projects/data-access/` — método `updateProject(projectId, dto)`
 - **Routing:** ruta `/projects/:projectId/edit`; al guardar con éxito redirigir a `/projects` o al
   detalle del proyecto
 - **Estado:** el componente carga el proyecto actual con `GET /projects/:projectId` al inicializar

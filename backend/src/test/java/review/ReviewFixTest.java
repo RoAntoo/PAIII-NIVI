@@ -16,6 +16,9 @@ class ReviewFixTest {
         for (String request : new String[]{"{}", "{\"assignee\":null}", "{\"assignee\":\"Luis\"}"}) {
             UpdateTaskDTO dto = new ObjectMapper().readValue(request, com.pa.proyecto.backend_integrator.adapter.web.UpdateTaskRequest.class).toCommand();
             Task task = new Task(); task.setAssignee("Ana");
+            var project = new com.pa.proyecto.backend_integrator.core.model.Project();
+            project.setStatus(com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus.ACTIVE);
+            task.setProject(project);
             ITaskRepository repository = mock(ITaskRepository.class);
             when(repository.findById(1L)).thenReturn(Optional.of(task));
             when(repository.save(task)).thenReturn(task);

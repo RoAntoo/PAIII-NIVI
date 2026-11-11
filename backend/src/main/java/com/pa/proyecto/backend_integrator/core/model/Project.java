@@ -24,9 +24,6 @@ public class Project {
 
     private String description;
 
-    // Un Proyecto tiene muchas Tareas
-    // mappedBy = "project" le dice a JPA: "La relacion la maneja el campo 'project' en la clase Task"
-
     private List<Task> tasks = new ArrayList<>();
 
 
@@ -45,9 +42,8 @@ public class Project {
                                  ProjectStatus status, String description,
                                  LocalDate today) {
         if (startDate == null || endDate == null || status == null) throw new IllegalArgumentException("Dates and status are required");
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Project name is required");
-        }
+        name = TextRules.required(name, "Project name");
+        TextRules.optional(description, "Project description");
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be after start date");
         }

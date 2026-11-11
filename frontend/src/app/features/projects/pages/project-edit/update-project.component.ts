@@ -49,10 +49,10 @@ export class UpdateProjectComponent implements OnInit {
 
     this.form = this.fb.group(
       {
-        name: ['', Validators.required],
+        name: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(255)]],
         startDate: ['', Validators.required],
         endDate: ['', Validators.required],
-        description: [''],
+        description: ['', Validators.maxLength(255)],
       },
       { validators: dateRangeValidator },
     );
@@ -86,7 +86,7 @@ export class UpdateProjectComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
+    if (this.loading() || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -95,7 +95,7 @@ export class UpdateProjectComponent implements OnInit {
     this.nameConflict.set(false);
     this.loading.set(true);
 
-    const body: ProjectUpdateRequest = this.form.value;
+    const body: ProjectUpdateRequest = { ...this.form.value, name: this.form.value.name.trim() };
 
     this.projectService.updateProject(this.projectId, body).subscribe({
       next: () => {
@@ -104,10 +104,10 @@ export class UpdateProjectComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        if (err.status === 409) {
+        if (err.status === 409 && err.error?.code === 'DUPLICATE_RESOURCE') {
           this.nameConflict.set(true);
-        } else if (err.status === 400) {
-          this.saveError.set('Datos inválidos. Revisá los campos.');
+        } else if (err.status === 400 || err.status === 409) {
+          this.saveError.set(err.error?.message || 'Datos inválidos. Revisá los campos.');
         } else {
           this.saveError.set('Error al guardar. Intentá de nuevo.');
         }

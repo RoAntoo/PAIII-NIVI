@@ -49,12 +49,12 @@
                 type="text"
                 class="form-control-custom"
                 [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched || nameConflict()"
-                formControlName="name"
+                formControlName="name" maxlength="255"
                 placeholder="Nombre del proyecto"
               />
             </div>
-            @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
-              <div class="invalid-feedback d-block mt-1">El nombre es obligatorio.</div>
+            @if (form.get('name')?.invalid && form.get('name')?.touched) {
+              <div class="invalid-feedback d-block mt-1">El nombre es obligatorio, no puede contener solo espacios y admite hasta 255 caracteres.</div>
             }
             @if (nameConflict()) {
               <div class="invalid-feedback d-block mt-1">Ya existe un proyecto con ese nombre.</div>
@@ -107,7 +107,7 @@
           <!-- Sección 3: Detalles Adicionales -->
           <div class="form-section-title">Detalles Adicionales</div>
           <div class="mb-4">
-            <label for="description" class="form-label fw-bold small text-muted mb-2">Descripción</label>
+            <label for="description" class="form-label fw-bold small text-muted mb-2">Descripción (hasta 255 caracteres)</label>
             <div class="textarea-wrapper">
               <div class="textarea-toolbar">
                 <div class="toolbar-left">
@@ -124,7 +124,7 @@
                 id="description"
                 class="textarea-custom"
                 rows="4"
-                formControlName="description"
+                formControlName="description" maxlength="255"
                 placeholder="Escribe detalles adicionales sobre el proyecto..."
               ></textarea>
             </div>

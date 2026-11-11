@@ -123,12 +123,13 @@
                 </span>
                 <span class="task-count">Ver Tareas <i class="bi bi-arrow-right-short"></i></span>
               </div>
-              <!-- Barra de progreso decorativa/real basada en el estado -->
-              <div class="progress-bar-container">
+              <div class="progress-bar-container" role="progressbar" aria-label="Tareas completadas"
+                aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progress(project)">
                 <div class="progress-bar-fill {{ getStatusClass(project.status) }}"
-                  [style.width.%]="project.status === 'CLOSED' ? 100 : project.status === 'ACTIVE' ? 65 : 20">
+                  [style.width.%]="progress(project)">
                 </div>
               </div>
+              <span class="task-count">{{ project.completedTasks }} de {{ project.totalTasks }} tareas completadas</span>
             </a>
             }
           </div>

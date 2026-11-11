@@ -16,13 +16,18 @@ import org.springframework.web.context.request.WebRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse("Unauthorized", "Invalid username or password"));
+    }
     @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class, org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ErrorResponse> malformed(Exception ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Bad Request", "Invalid request data"));
     }
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> integrity(Exception ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Conflict", "Data conflicts with an existing resource"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Conflict", "Data conflicts with an existing resource", "DATA_CONFLICT"));
     }
 
 
@@ -47,7 +52,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateResourceException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(), "DUPLICATE_RESOURCE"
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
@@ -60,7 +65,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBusinessRuleViolationException(BusinessRuleViolationException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(), "BUSINESS_RULE"
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
@@ -73,7 +78,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                ex.getMessage()
+                ex.getMessage(), "VALIDATION_ERROR"
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }

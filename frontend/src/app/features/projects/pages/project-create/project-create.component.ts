@@ -32,20 +32,20 @@ export class ProjectCreateComponent {
 
   projectForm = this.fb.group(
     {
-      name: this.fb.control('', { validators: Validators.required, nonNullable: true }),
+      name: this.fb.control('', { validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(255)], nonNullable: true }),
       startDate: this.fb.control('', { validators: Validators.required, nonNullable: true }),
       endDate: this.fb.control('', { validators: Validators.required, nonNullable: true }),
       status: this.fb.control<ProjectStatus>('PLANNED', {
         validators: Validators.required,
         nonNullable: true,
       }),
-      description: this.fb.control(''),
+      description: this.fb.control('', Validators.maxLength(255)),
     },
     { validators: dateValidator },
   );
 
   onSubmit() {
-    if (this.projectForm.invalid) {
+    if (this.loading() || this.projectForm.invalid) {
       this.projectForm.markAllAsTouched();
       return;
     }
@@ -57,7 +57,7 @@ export class ProjectCreateComponent {
     const formValue = this.projectForm.getRawValue();
     const request: ProjectRequest = {
       id: null,
-      name: formValue.name,
+      name: formValue.name.trim(),
       startDate: formValue.startDate,
       endDate: formValue.endDate,
       status: formValue.status,
@@ -80,10 +80,10 @@ export class ProjectCreateComponent {
         this.loading.set(false);
         this.success.set(null);
 
-        if (err.status === 409) {
+        if (err.status === 409 && err.error?.code === 'DUPLICATE_RESOURCE') {
           this.error.set('Recurso duplicado: El nombre del proyecto ya existe.');
-        } else if (err.status === 400) {
-          this.error.set('Error de validación: Revisa los datos ingresados.');
+        } else if (err.status === 400 || err.status === 409) {
+          this.error.set(err.error?.message || 'Error de validación: Revisa los datos ingresados.');
         } else {
           this.error.set('Ocurrió un error inesperado al intentar crear el proyecto.');
         }

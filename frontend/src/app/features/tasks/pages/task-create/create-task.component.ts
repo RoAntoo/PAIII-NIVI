@@ -24,9 +24,9 @@ export class CreateTaskComponent implements OnInit {
   successMessage = signal<string | null>(null);
 
   form = this.fb.group({
-    title: ['', Validators.required],
-    estimateHours: [null as number | null, [Validators.required, Validators.min(1)]],
-    assignee: [''],
+    title: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(255)]],
+    estimateHours: [null as number | null, [Validators.required, Validators.min(1), Validators.max(2147483647), Validators.pattern(/^[1-9]\d*$/)]],
+    assignee: ['', Validators.maxLength(255)],
     status: ['TODO', Validators.required],
   });
 
@@ -36,7 +36,7 @@ export class CreateTaskComponent implements OnInit {
 
   onSubmit(): void {
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    if (this.loading() || this.form.invalid) return;
 
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -45,9 +45,9 @@ export class CreateTaskComponent implements OnInit {
     this.taskService
       .createTask(this.projectId, {
         id: null,
-        title: this.form.value.title!,
+        title: this.form.value.title!.trim(),
         estimateHours: this.form.value.estimateHours!,
-        assignee: this.form.value.assignee || null,
+        assignee: this.form.value.assignee?.trim() || null,
         status: this.form.value.status as TaskStatus,
       })
       .subscribe({

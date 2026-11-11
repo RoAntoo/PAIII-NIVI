@@ -1,0 +1,48 @@
+import { TestBed } from '@angular/core/testing';
+import { ConfirmationModalComponent } from './confirmation-modal.component';
+
+describe('confirmation dialog keyboard access', () => {
+  for (const initial of [true, false]) {
+    it(`restores Ionic scrolling when its initial vertical state is ${initial}`, async () => {
+      const content = document.createElement('ion-content') as HTMLElement & { scrollX: boolean; scrollY: boolean };
+      content.scrollX = true; content.scrollY = initial;
+      document.body.append(content);
+      const fixture = TestBed.createComponent(ConfirmationModalComponent);
+      content.append(fixture.nativeElement);
+      fixture.detectChanges(); await fixture.whenStable();
+      expect(content.scrollX).toBe(false);
+      expect(content.scrollY).toBe(false);
+      expect(document.body.style.overflow).toBe('hidden');
+      fixture.destroy();
+      expect(content.scrollX).toBe(true);
+      expect(content.scrollY).toBe(initial);
+      content.remove();
+    });
+  }
+  it('labels the dialog, traps focus, handles Escape and restores the opener', async () => {
+    const opener = document.createElement('button');
+    document.body.append(opener); opener.focus();
+    const fixture = TestBed.createComponent(ConfirmationModalComponent);
+    const cancel = vi.fn(); fixture.componentInstance.cancel.subscribe(cancel);
+    fixture.detectChanges(); await fixture.whenStable();
+    const dialog = fixture.nativeElement.querySelector('[role=dialog]') as HTMLElement;
+    const buttons = dialog.querySelectorAll('button');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)?.textContent).toContain('Confirmación');
+    expect(document.activeElement).toBe(buttons[0]);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(buttons[1]);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(buttons[0]);
+    fixture.componentRef.setInput('isLoading', true); fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(cancel).not.toHaveBeenCalled();
+    fixture.componentRef.setInput('isLoading', false); fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(cancel).toHaveBeenCalledOnce();
+    fixture.destroy();
+    expect(document.activeElement).toBe(opener);
+    expect(document.body.style.overflow).not.toBe('hidden');
+    opener.remove();
+  });
+});

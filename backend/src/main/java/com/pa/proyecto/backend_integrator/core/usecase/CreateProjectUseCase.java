@@ -5,6 +5,7 @@ import com.pa.proyecto.backend_integrator.core.exception.DuplicateResourceExcept
 import com.pa.proyecto.backend_integrator.core.input.ICreateProjectInput;
 import com.pa.proyecto.backend_integrator.core.input.DTO.CreateProjectDTO;
 import com.pa.proyecto.backend_integrator.core.model.Project;
+import com.pa.proyecto.backend_integrator.core.model.TextRules;
 import com.pa.proyecto.backend_integrator.core.output.IProjectRepository;
 
 import java.time.Clock;
@@ -23,9 +24,8 @@ public class CreateProjectUseCase implements ICreateProjectInput {
     @Override
     public Project createProject(CreateProjectDTO dto) {
 
-        if (dto.name() == null || dto.name().isBlank()) {
-            throw new IllegalArgumentException("Project name is required");
-        }
+        String name = TextRules.required(dto.name(), "Project name");
+        TextRules.optional(dto.description(), "Project description");
         if (dto.startDate() == null) {
             throw new IllegalArgumentException("Project start date is required");
         }
@@ -33,7 +33,7 @@ public class CreateProjectUseCase implements ICreateProjectInput {
             throw new IllegalArgumentException("Project end date is required");
         }
 
-        if (projectRepository.existsByName(dto.name())) {
+        if (projectRepository.existsByName(name)) {
             throw new DuplicateResourceException("Project with name '" + dto.name() + "' already exists.");
         }
 
@@ -47,7 +47,7 @@ public class CreateProjectUseCase implements ICreateProjectInput {
         }
 
         Project newProject = Project.create(
-                dto.name(),
+                name,
                 dto.startDate(),
                 dto.endDate(),
                 dto.status(),
