@@ -16,8 +16,8 @@ export class ProjectService {
     return this.http.post<ProjectResponse>(`${this.API}/projects`, project);
   }
 
-  getProjects(): Observable<ProjectResponse[]> {
-    return this.http.get<ProjectResponse[]>(`${this.API}/projects`);
+  getProjects(limit?: number): Observable<ProjectResponse[]> {
+    return this.http.get<ProjectResponse[]>(`${this.API}/projects`, { params: limit === undefined ? {} : { limit } });
   }
 
   getProjectById(id: number): Observable<ProjectResponse> {

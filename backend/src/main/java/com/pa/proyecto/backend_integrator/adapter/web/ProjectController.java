@@ -2,7 +2,8 @@ package com.pa.proyecto.backend_integrator.adapter.web;
 
 import com.pa.proyecto.backend_integrator.core.input.DTO.*;
 import com.pa.proyecto.backend_integrator.core.model.Project;
-import com.pa.proyecto.backend_integrator.core.model.Task;
+import com.pa.proyecto.backend_integrator.core.model.ProjectSummary;
+import com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus;
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
 import com.pa.proyecto.backend_integrator.core.usecase.CreateProjectUseCase;
 import com.pa.proyecto.backend_integrator.core.usecase.FindAllProjectsUseCase;
@@ -48,22 +49,21 @@ public class ProjectController {
         this.findAllProjectsUseCase = findAllProjectsUseCase;
     }
 
-    private TaskResponseDTO mapTaskToResponse(Task task) {
-        return new TaskResponseDTO(
-                task.getId(), task.getTitle(), task.getEstimateHours(),
-                task.getAssignee(), task.getStatus(), task.getFinishedAt(),
-                task.getCreatedAt(), task.getProject().getId()
-        );
-    }
-
     private ProjectResponseDTO mapProjectToResponse(Project project) {
         return new ProjectResponseDTO(
                 project.getId(), project.getName(), project.getStartDate(),
-                project.getEndDate(), project.getStatus(), project.getDescription()
+                project.getEndDate(), project.getStatus(), project.getDescription(),
+                project.getTasks().size(),
+                project.getTasks().stream().filter(task -> task.getStatus() == TaskStatus.DONE).count()
         );
     }
 
     // --- ENDPOINTS ---
+
+    private ProjectResponseDTO mapSummaryToResponse(ProjectSummary project) {
+        return new ProjectResponseDTO(project.id(), project.name(), project.startDate(), project.endDate(),
+                project.status(), project.description(), project.totalTasks(), project.completedTasks());
+    }
 
     @PostMapping
     public ResponseEntity<ProjectResponseDTO> createProject(@RequestBody CreateProjectDTO dto) {
@@ -87,18 +87,20 @@ public class ProjectController {
     public ResponseEntity<List<ProjectResponseDTO>> findProjects(
             @RequestParam(required = false) ProjectStatus status,
             @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Integer limit
     ) {
         FindProjectsQueryDTO query = new FindProjectsQueryDTO(
                 Optional.ofNullable(status),
                 Optional.ofNullable(startDate),
-                Optional.ofNullable(endDate)
+                Optional.ofNullable(endDate),
+                Optional.ofNullable(limit)
         );
 
-        List<Project> projects = findAllProjectsUseCase.findAllProjects(query);
+        List<ProjectSummary> projects = findAllProjectsUseCase.findAllProjects(query);
 
         List<ProjectResponseDTO> response = projects.stream()
-                .map(this::mapProjectToResponse)
+                .map(this::mapSummaryToResponse)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);

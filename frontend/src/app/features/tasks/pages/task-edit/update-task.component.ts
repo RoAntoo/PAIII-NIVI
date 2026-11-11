@@ -29,9 +29,9 @@ export class UpdateTaskComponent implements OnInit {
   task = signal<TaskResponse | null>(null);
 
   form = this.fb.group({
-    title: ['', [Validators.required, Validators.pattern(/\S+/)]],
-    estimateHours: [1, [Validators.required, Validators.min(1)]],
-    assignee: [''],
+    title: ['', [Validators.required, Validators.pattern(/\S+/), Validators.maxLength(255)]],
+    estimateHours: [1, [Validators.required, Validators.min(1), Validators.max(2147483647), Validators.pattern(/^[1-9]\d*$/)]],
+    assignee: ['', Validators.maxLength(255)],
   });
 
   ngOnInit(): void {
@@ -66,7 +66,7 @@ export class UpdateTaskComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) return;
+    if (this.isSaving() || this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.isSaving.set(true);
     this.errorMessage.set(null);

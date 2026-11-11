@@ -7,6 +7,6 @@ public interface IProjectRepository {
  Optional<Project> findById(Long id);
  boolean existsByName(String name);
  boolean existsById(Long id);
- List<Project> findAll(FindProjectsQueryDTO query);
+ List<ProjectSummary> findAll(FindProjectsQueryDTO query);
  void delete(Project project);
 }

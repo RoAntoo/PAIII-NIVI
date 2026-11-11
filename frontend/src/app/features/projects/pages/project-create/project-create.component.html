@@ -18,25 +18,25 @@
           <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Nombre del Proyecto</label>
-              <input type="text" class="form-control" formControlName="name" placeholder="Ej: Rediseño del sitio web" />
-              <div class="text-danger small mt-1" *ngIf="projectForm.get('name')?.touched && projectForm.get('name')?.hasError('required')">
-                El nombre es un campo obligatorio.
+              <label for="name" class="form-label fw-bold">Nombre del Proyecto</label>
+              <input type="text" class="form-control" id="name" formControlName="name" maxlength="255" placeholder="Ej: Rediseño del sitio web" />
+              <div class="text-danger small mt-1" *ngIf="projectForm.get('name')?.touched && projectForm.get('name')?.invalid">
+                El nombre es obligatorio, no puede contener solo espacios y admite hasta 255 caracteres.
               </div>
             </div>
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Fecha de Inicio</label>
-                <input type="date" class="form-control" formControlName="startDate" />
+                <label for="startDate" class="form-label fw-bold">Fecha de Inicio</label>
+                <input type="date" class="form-control" id="startDate" formControlName="startDate" />
                 <div class="text-danger small mt-1" *ngIf="projectForm.get('startDate')?.touched && projectForm.get('startDate')?.hasError('required')">
                   Requerido.
                 </div>
               </div>
 
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Fecha de Fin</label>
-                <input type="date" class="form-control" formControlName="endDate" />
+                <label for="endDate" class="form-label fw-bold">Fecha de Fin</label>
+                <input type="date" class="form-control" id="endDate" formControlName="endDate" />
                 <div class="text-danger small mt-1" *ngIf="projectForm.get('endDate')?.touched && projectForm.get('endDate')?.hasError('required')">
                   Requerido.
                 </div>
@@ -50,8 +50,8 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Estado</label>
-              <select class="form-select" formControlName="status">
+              <label for="status" class="form-label fw-bold">Estado</label>
+              <select class="form-select" id="status" formControlName="status">
                 <option value="PLANNED">Planeado</option>
                 <option value="ACTIVE">Activo</option>
                 <option value="CLOSED">Cerrado</option>
@@ -59,8 +59,8 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Descripción (Opcional)</label>
-              <textarea class="form-control" rows="3" formControlName="description" placeholder="Agregá detalles adicionales del proyecto..."></textarea>
+              <label for="description" class="form-label fw-bold">Descripción (opcional, hasta 255 caracteres)</label>
+              <textarea class="form-control" rows="3" id="description" formControlName="description" maxlength="255" placeholder="Agregá detalles adicionales del proyecto..."></textarea>
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">

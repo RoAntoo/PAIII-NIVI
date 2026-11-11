@@ -23,8 +23,8 @@
           <form *ngIf="!isLoading() && task()" [formGroup]="form" (ngSubmit)="onSubmit()">
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Título de la Tarea</label>
-              <input type="text" class="form-control" formControlName="title" placeholder="Ej: Actualizar base de datos" />
+              <label for="title" class="form-label fw-bold">Título de la Tarea</label>
+              <input type="text" class="form-control" id="title" formControlName="title" maxlength="255" placeholder="Ej: Actualizar base de datos" />
               <div class="text-danger small mt-1" *ngIf="form.get('title')?.touched && form.get('title')?.invalid">
                 El título es obligatorio y no puede estar compuesto solo por espacios.
               </div>
@@ -32,16 +32,16 @@
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Horas Estimadas</label>
-                <input type="number" class="form-control" formControlName="estimateHours" min="1" />
+                <label for="estimateHours" class="form-label fw-bold">Horas Estimadas</label>
+                <input type="number" class="form-control" id="estimateHours" formControlName="estimateHours" step="1" max="2147483647" min="1" />
                 <div class="text-danger small mt-1" *ngIf="form.get('estimateHours')?.touched && form.get('estimateHours')?.invalid">
-                  Requerido. Debe ser un número mayor o igual a 1.
+                  Requerido. Debe ser un entero entre 1 y 2147483647.
                 </div>
               </div>
 
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Asignado a (Opcional)</label>
-                <input type="text" class="form-control" formControlName="assignee" placeholder="Ej: jperez" />
+                <label for="assignee" class="form-label fw-bold">Asignado a (Opcional)</label>
+                <input type="text" class="form-control" id="assignee" formControlName="assignee" maxlength="255" placeholder="Ej: jperez" />
               </div>
             </div>
 

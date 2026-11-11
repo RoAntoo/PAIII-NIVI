@@ -14,31 +14,31 @@
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
         <div class="mb-3">
-          <label class="form-label">Título *</label>
-          <input type="text" class="form-control" formControlName="title"
+          <label for="title" class="form-label">Título *</label>
+          <input type="text" class="form-control" id="title" formControlName="title" maxlength="255"
                  [class.is-invalid]="form.controls.title.invalid && form.controls.title.touched">
           @if (form.controls.title.invalid && form.controls.title.touched) {
-            <div class="invalid-feedback">El título es obligatorio.</div>
+            <div class="invalid-feedback">El título es obligatorio, no puede contener solo espacios y admite hasta 255 caracteres.</div>
           }
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Horas estimadas *</label>
-          <input type="number" class="form-control" formControlName="estimateHours"
+          <label for="estimateHours" class="form-label">Horas estimadas *</label>
+          <input type="number" class="form-control" id="estimateHours" formControlName="estimateHours" step="1" max="2147483647"
                  [class.is-invalid]="form.controls.estimateHours.invalid && form.controls.estimateHours.touched">
           @if (form.controls.estimateHours.invalid && form.controls.estimateHours.touched) {
-            <div class="invalid-feedback">Las horas estimadas deben ser mayor a 0.</div>
+            <div class="invalid-feedback">Ingresá un entero entre 1 y 2147483647.</div>
           }
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Responsable</label>
-          <input type="text" class="form-control" formControlName="assignee">
+          <label for="assignee" class="form-label">Responsable</label>
+          <input type="text" class="form-control" id="assignee" formControlName="assignee" maxlength="255">
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Estado *</label>
-          <select class="form-select" formControlName="status">
+          <label for="status" class="form-label">Estado *</label>
+          <select class="form-select" id="status" formControlName="status">
             <option value="TODO">TODO</option>
             <option value="IN_PROGRESS">IN_PROGRESS</option>
             <option value="DONE">DONE</option>

@@ -1,3 +1,5 @@
+> Contrato vigente complementado por [ESTADO_ACTUAL.md](../../ESTADO_ACTUAL.md). Autenticación: POST /auth/login y JWT Bearer para proyectos y tareas.
+
 # SPEC: Eliminar un proyecto existente
 
 **Nombre de la feature:**
@@ -21,9 +23,9 @@ DELETE /projects/{projectId}
 **Lineamientos técnicos:**
 - **Componentes:**
   - Standalone components, Angular 17.
-  - Componente principal: `ProjectListComponent` en `src/app/features/get-projects/` (con archivos `.html` y `.css` independientes).
-  - Componente de confirmación: `ConfirmationModalComponent` reusable en `src/app/shared/components/confirmation-modal/` (con archivos `.html` y `.css` independientes).
-- **Servicio:** `ProjectService` en `src/app/service/project.service.ts` con método `deleteProject(id: number): Observable<void>`.
+  - Componente principal: `ProjectListComponent` en `frontend/src/app/features/projects/pages/project-list/` (con archivos `.html` y `.css` independientes).
+  - Componente de confirmación: `ConfirmationModalComponent` reusable en `frontend/src/app/shared/ui/confirmation-modal/` (con archivos `.html` y `.css` independientes).
+- **Servicio:** `ProjectService` en `frontend/src/app/features/projects/data-access/project-api.service.ts` con método `deleteProject(id: number): Observable<void>`.
 - **Manejo del Estado:** El listado refresca su señal `projects` reactivamente volviendo a llamar a `loadProjects()`.
 - **Estilos:** Bootstrap 5 con estilos customizados integrando colores pastel y hover micro-animados acordes a la guía de diseño general.
 

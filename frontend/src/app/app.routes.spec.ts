@@ -5,11 +5,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
+import { AuthService } from './core/auth/auth.service';
 
 describe('Feature routes', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [
     provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideHttpClient(), provideHttpClientTesting(),
+    { provide: AuthService, useValue: { isAuthenticated: () => true } },
   ] }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 

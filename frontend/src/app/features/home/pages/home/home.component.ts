@@ -6,7 +6,6 @@ import { ProjectResponse } from '../../../projects/domain/project.models';
 import { TaskService } from '../../../tasks/data-access/task-api.service';
 import { TaskResponse } from '../../../tasks/domain/task.models';
 import { forkJoin } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
 
 interface RecentTaskItem extends TaskResponse {
   projectName: string;
@@ -32,14 +31,18 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading.set(true);
-    forkJoin({projects: this.projectService.getProjects(), recent: this.taskService.getRecentTasks()}).subscribe({
+    forkJoin({projects: this.projectService.getProjects(3), recent: this.taskService.getRecentTasks()}).subscribe({
       next: ({projects, recent}) => {
-        this.projects.set(projects.slice(0, 3));
+        this.projects.set(projects);
         this.recentTasks.set(recent.map(item => ({...item.task, projectId: item.projectId, projectName: item.projectName})));
         this.loading.set(false);
       },
       error: () => {this.error.set('No se pudo cargar el inicio. Intentá nuevamente.'); this.loading.set(false);}
     });
+  }
+
+  progress(project: ProjectResponse): number {
+    return project.totalTasks > 0 ? Math.round(project.completedTasks / project.totalTasks * 100) : 0;
   }
 
   getStatusLabel(status: string): string {

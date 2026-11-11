@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.security.test.context.support.WithMockUser
 class ProjectTaskApiTest {
  @Autowired MockMvc mvc;
  @Autowired ObjectMapper json;
@@ -44,7 +45,7 @@ class ProjectTaskApiTest {
   String name=json.readTree(mvc.perform(get(path)).andReturn().getResponse().getContentAsString()).get("name").asText();
   mvc.perform(put(path).contentType("application/json").content("{\"name\":\"Changed\",\"endDate\":\"2000-01-01\"}")).andExpect(status().isConflict());
   mvc.perform(get(path)).andExpect(jsonPath("$.name").value(name));
-  mvc.perform(put(path+"/tasks/"+t).contentType("application/json").content("{\"title\":\"Changed\",\"estimateHours\":0}")).andExpect(status().isConflict());
+  mvc.perform(put(path+"/tasks/"+t).contentType("application/json").content("{\"title\":\"Changed\",\"estimateHours\":0}")).andExpect(status().isBadRequest());
   mvc.perform(get(path+"/tasks/"+t)).andExpect(jsonPath("$.title").value("Task"));
  }
  @Test void emptyAndMissingProjectsAndInvalidCreation() throws Exception {
@@ -57,7 +58,7 @@ class ProjectTaskApiTest {
  @Test void closedProjectsAndDuplicateNamesAreRejected() throws Exception {
   String body="{\"name\":\""+java.util.UUID.randomUUID()+"\",\"startDate\":\"2099-01-01\",\"endDate\":\"2099-02-01\",\"status\":\"CLOSED\"}";
   long p=json.readTree(mvc.perform(post("/projects").contentType("application/json").content(body)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
-  mvc.perform(post("/projects").contentType("application/json").content(body)).andExpect(status().isConflict());
+  mvc.perform(post("/projects").contentType("application/json").content(body)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("DUPLICATE_RESOURCE"));
   mvc.perform(post("/projects/"+p+"/tasks").contentType("application/json").content("{\"title\":\"Task\",\"estimateHours\":1,\"status\":\"TODO\"}")).andExpect(status().isConflict());
  }
  @Test void detachedModelsAndProjectUpdatesPreserveTasks() throws Exception {
@@ -83,9 +84,9 @@ class ProjectTaskApiTest {
  @Test void filtersStillUseStatusAndDateOverlap() throws Exception {
   long p=project();
   var result=projects.findAll(new com.pa.proyecto.backend_integrator.core.input.DTO.FindProjectsQueryDTO(java.util.Optional.of(com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus.PLANNED),java.util.Optional.of(java.time.LocalDate.of(2099,1,15)),java.util.Optional.of(java.time.LocalDate.of(2099,1,20))));
-  org.junit.jupiter.api.Assertions.assertTrue(result.stream().anyMatch(project->project.getId().equals(p)));
+  org.junit.jupiter.api.Assertions.assertTrue(result.stream().anyMatch(project->project.id().equals(p)));
   var absent=projects.findAll(new com.pa.proyecto.backend_integrator.core.input.DTO.FindProjectsQueryDTO(java.util.Optional.empty(),java.util.Optional.of(java.time.LocalDate.of(2100,1,1)),java.util.Optional.empty()));
-  org.junit.jupiter.api.Assertions.assertTrue(absent.stream().noneMatch(project->project.getId().equals(p)));
+  org.junit.jupiter.api.Assertions.assertTrue(absent.stream().noneMatch(project->project.id().equals(p)));
  }
  @Test void listingAndRecentActivityUseBoundedQueries() throws Exception {
   for(int i=0;i<6;i++) task(project());

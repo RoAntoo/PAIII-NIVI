@@ -2,7 +2,6 @@
 // package com.pa.proyecto.backend_integrator.core.usecase;
 package usecase;
 
-import com.pa.proyecto.backend_integrator.core.exception.BusinessRuleViolationException;
 import com.pa.proyecto.backend_integrator.core.exception.ResourceNotFoundException;
 import com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO;
 import com.pa.proyecto.backend_integrator.core.model.Task;
@@ -38,6 +37,9 @@ class UpdateTaskUseCaseTest {
     @BeforeEach
     void setUp() {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(mockTask));
+        var project = new com.pa.proyecto.backend_integrator.core.model.Project();
+        project.setStatus(com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus.ACTIVE);
+        lenient().when(mockTask.getProject()).thenReturn(project);
     }
 
     @Test
@@ -57,7 +59,8 @@ class UpdateTaskUseCaseTest {
 
     @Test
     void testUpdateTask_HappyPath_PartialUpdate() {
-        UpdateTaskDTO dto = new UpdateTaskDTO(null, 5, null);
+        UpdateTaskDTO dto = new UpdateTaskDTO();
+        dto.setEstimateHours(5);
 
         when(taskRepository.save(mockTask)).thenReturn(mockTask);
 
@@ -66,7 +69,7 @@ class UpdateTaskUseCaseTest {
         assertNotNull(result);
         verify(mockTask, never()).setTitle(anyString());
         verify(mockTask, times(1)).setEstimateHours(5);
-        verify(mockTask, never()).setAssignee(anyString());
+        verify(mockTask, never()).setAssignee(nullable(String.class));
         verify(taskRepository, times(1)).save(mockTask);
     }
 
@@ -87,7 +90,7 @@ class UpdateTaskUseCaseTest {
     void testUpdateTask_Fails_WhenEstimateHoursIsZero() {
         UpdateTaskDTO dto = new UpdateTaskDTO(null, 0, null);
 
-        assertThrows(BusinessRuleViolationException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             updateTaskUseCase.updateTask(taskId, dto);
         });
 
@@ -98,7 +101,7 @@ class UpdateTaskUseCaseTest {
     void testUpdateTask_Fails_WhenEstimateHoursIsNegative() {
         UpdateTaskDTO dto = new UpdateTaskDTO(null, -5, null);
 
-        assertThrows(BusinessRuleViolationException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             updateTaskUseCase.updateTask(taskId, dto);
         });
 
