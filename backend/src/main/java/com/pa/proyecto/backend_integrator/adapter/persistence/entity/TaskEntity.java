@@ -8,9 +8,9 @@ import com.pa.proyecto.backend_integrator.core.model.enums.*;
 public class TaskEntity {
  @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
  @Column(nullable=false) private String title;
- private Integer estimateHours;
+ @Column(nullable=false) private Integer estimateHours;
  private String assignee;
- @Enumerated(EnumType.STRING) private TaskStatus status;
+ @Enumerated(EnumType.STRING) @Column(nullable=false) private TaskStatus status;
  private java.time.LocalDateTime finishedAt;
  private java.time.LocalDateTime createdAt;
  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="project_id",nullable=false) private ProjectEntity project;

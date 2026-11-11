@@ -1,3 +1,5 @@
+> Estado vigente y configuración: ../docs/ESTADO_ACTUAL.md (incluye las correcciones posteriores al merge).
+
 # Backend Nivi
 
 Java 21, Spring Boot 3.5.7 y Maven Wrapper. API consumida por frontend/.

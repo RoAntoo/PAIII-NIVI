@@ -1,3 +1,5 @@
+> Estado vigente y configuración: ../docs/ESTADO_ACTUAL.md (incluye las correcciones posteriores al merge).
+
 # Frontend Nivi
 
 Ejecutar npm ci, npm start, npm test -- --watch=false y npm run build desde este directorio.

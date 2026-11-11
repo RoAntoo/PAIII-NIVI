@@ -10,6 +10,7 @@ import java.util.*;
 public class TaskRepositoryAdapter implements ITaskRepository {
  private final TaskJpaRepository repository;private final ProjectJpaRepository projects;
  public TaskRepositoryAdapter(TaskJpaRepository repository,ProjectJpaRepository projects){this.repository=repository;this.projects=projects;}
+ public java.util.List<Task> findRecent(){return repository.findTop4ByOrderByCreatedAtDescIdDesc().stream().map(PersistenceMapper::task).toList();}
  public Task save(Task t){TaskEntity e=t.getId()==null?new TaskEntity():repository.findById(t.getId()).orElseThrow(()->new ResourceNotFoundException("Task not found"));PersistenceMapper.copy(t,e);e.setProject(projects.findById(t.getProject().getId()).orElseThrow(()->new ResourceNotFoundException("Project not found")));return PersistenceMapper.task(repository.saveAndFlush(e));}
  public Optional<Task> findById(Long id){return repository.findById(id).map(PersistenceMapper::task);}
  public Optional<Task> findByIdAndProjectId(Long id,Long p){return repository.findByIdAndProjectId(id,p).map(PersistenceMapper::task);}

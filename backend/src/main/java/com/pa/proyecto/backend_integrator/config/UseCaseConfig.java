@@ -11,6 +11,8 @@ import java.time.Clock;
 
 @Configuration
 public class UseCaseConfig {
+ @Bean public RecentTasksUseCase recentTasks(ITaskRepository tasks){return new RecentTasksUseCase(tasks);}
+
  @Bean public ProjectQueriesUseCase projectQueries(IProjectRepository p){return new ProjectQueriesUseCase(p);}
  @Bean public TaskQueriesUseCase taskQueries(ITaskRepository t,IProjectRepository p){return new TaskQueriesUseCase(t,p);}
 

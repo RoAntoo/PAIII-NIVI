@@ -66,10 +66,10 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long projectId,
             @PathVariable Long taskId,
-            @RequestBody UpdateTaskDTO dto) {
+            @RequestBody UpdateTaskRequest dto) {
 
         requireTask(projectId, taskId);
-        Task updatedTask = updateTaskUseCase.updateTask(taskId, dto);
+        Task updatedTask = updateTaskUseCase.updateTask(taskId, dto.toCommand());
 
         TaskResponseDTO response = new TaskResponseDTO(
                 updatedTask.getId(),

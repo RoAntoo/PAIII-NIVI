@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProjectTaskApiTest {
  @Autowired MockMvc mvc;
  @Autowired ObjectMapper json;
+ @Autowired jakarta.persistence.EntityManagerFactory entityManagerFactory;
  @Autowired com.pa.proyecto.backend_integrator.core.output.IProjectRepository projects;
  @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
  @Autowired com.pa.proyecto.backend_integrator.core.output.ITaskRepository tasks;
@@ -85,6 +86,19 @@ class ProjectTaskApiTest {
   org.junit.jupiter.api.Assertions.assertTrue(result.stream().anyMatch(project->project.getId().equals(p)));
   var absent=projects.findAll(new com.pa.proyecto.backend_integrator.core.input.DTO.FindProjectsQueryDTO(java.util.Optional.empty(),java.util.Optional.of(java.time.LocalDate.of(2100,1,1)),java.util.Optional.empty()));
   org.junit.jupiter.api.Assertions.assertTrue(absent.stream().noneMatch(project->project.getId().equals(p)));
+ }
+ @Test void listingAndRecentActivityUseBoundedQueries() throws Exception {
+  for(int i=0;i<6;i++) task(project());
+  var statistics=entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+  statistics.setStatisticsEnabled(true);
+  try {
+   statistics.clear();
+   projects.findAll(com.pa.proyecto.backend_integrator.core.input.DTO.FindProjectsQueryDTO.empty());
+   org.junit.jupiter.api.Assertions.assertEquals(1,statistics.getPrepareStatementCount());
+   statistics.clear();
+   mvc.perform(get("/projects/recent-tasks")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(4)).andExpect(jsonPath("$[0].projectName").exists());
+   org.junit.jupiter.api.Assertions.assertEquals(1,statistics.getPrepareStatementCount());
+  } finally {statistics.setStatisticsEnabled(false);}
  }
  @Test void malformedInputAndCors() throws Exception {
   mvc.perform(post("/projects").contentType("application/json").content("{" )).andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").exists());

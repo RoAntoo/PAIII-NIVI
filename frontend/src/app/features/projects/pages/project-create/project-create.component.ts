@@ -11,26 +11,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ProjectService } from '../../data-access/project-api.service';
 import { ProjectRequest, ProjectStatus } from '../../domain/project.models';
 
-function dateValidator(control: AbstractControl): ValidationErrors | null {
-  const start = control.get('startDate')?.value;
-  const end = control.get('endDate')?.value;
-  if (!start || !end) return null;
-
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const errors: any = {};
-  if (endDate < startDate) {
-    errors.endBeforeStart = true;
-  }
-  if (endDate < today) {
-    errors.endBeforeToday = true;
-  }
-
-  return Object.keys(errors).length > 0 ? errors : null;
-}
+import { dateValidator } from '../../validators/project-dates';
 
 @Component({
   selector: 'app-create-project',

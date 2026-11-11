@@ -1,3 +1,5 @@
+> Estado vigente y configuración: docs/ESTADO_ACTUAL.md (incluye las correcciones posteriores al merge).
+
 # Nivi — proyectos y tareas
 
 Aplicación Angular 21 organizada por capacidades funcionales dentro de un repositorio compartido con el backend Java.
