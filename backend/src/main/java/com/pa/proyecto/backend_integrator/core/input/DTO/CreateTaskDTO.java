@@ -13,6 +13,7 @@ public record CreateTaskDTO(
         TaskCategory category,
         java.util.UUID clientRequestId
 ) {
+    /** Preserves the legacy constructor by leaving new optional metadata unspecified. */
     public CreateTaskDTO(String title, Integer estimateHours, String assignee, TaskStatus status) {
         this(title, estimateHours, assignee, status, null, null, null);
     }

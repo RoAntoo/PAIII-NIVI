@@ -62,6 +62,7 @@ export class TaskListComponent implements OnInit {
     );
   });
 
+  /** Reads the parent project and loads its tasks or reports an invalid route. */
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('projectId');
 
@@ -73,6 +74,7 @@ export class TaskListComponent implements OnInit {
     }
   }
 
+  /** Loads server tasks and exposes a recoverable error when the request fails. */
   loadTasks(projectId: string): void {
     this.loading.set(true);
     this.error.set(null);
@@ -89,16 +91,19 @@ export class TaskListComponent implements OnInit {
     });
   }
 
+  /** Updates the displayed task-status filter from the selected option. */
   onFilterChange(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
     this.filterStatus.set(selectElement.value);
   }
 
+  /** Opens confirmation for a task without sending a deletion request. */
   requestDelete(task: TaskResponse): void {
     this.deleteError.set(null);
     this.pendingDelete.set(task);
   }
 
+  /** Closes an idle confirmation dialog and restores focus to the task filter. */
   cancelDelete(): void {
     if (!this.isDeleting()) {
       this.pendingDelete.set(null);
@@ -106,6 +111,7 @@ export class TaskListComponent implements OnInit {
     }
   }
 
+  /** Deletes a confirmed task, reconciles a missing task and retains recoverable failures. */
   confirmDelete(): void {
     const task = this.pendingDelete();
     if (!task || this.isDeleting()) return;
@@ -120,6 +126,12 @@ export class TaskListComponent implements OnInit {
       },
       error: (err) => {
         this.isDeleting.set(false);
+        if (err.status === 404) {
+          this.tasks.update(tasks => tasks.filter(item => item.id !== task.id));
+          this.pendingDelete.set(null);
+          this.host.nativeElement.querySelector<HTMLSelectElement>('#statusFilter')?.focus();
+          return;
+        }
         this.deleteError.set(err.status === 409
           ? 'No se pueden borrar tareas de un proyecto cerrado.'
           : 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');

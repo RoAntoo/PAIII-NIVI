@@ -24,7 +24,7 @@ Respaldar la base persistente antes de cambiar el esquema. El SQL sigue siendo e
 ## Verificación
 
 - Base inicial del PR 01: 19 pruebas frontend y 50 backend aprobadas.
-- Resultado actual: 33 pruebas frontend y 56 backend aprobadas; build Angular de producción y JAR backend aprobados.
+- Resultado actual: 41 pruebas frontend y 56 backend aprobadas; build Angular de producción y JAR backend aprobados.
 - Capacitor Android generado y sincronizado con Preferences real registrado.
 - La compilación del APK se detuvo por falta de SDK Android. No se abrió Android Studio ni se probaron Gradle/release o un celular físico. [Checklist pendiente](android-setup.md).
 - Intento de verificación visual del servidor local: timeout en el navegador de pruebas. No se registra como prueba visual aprobada.

@@ -68,6 +68,8 @@ El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debu
 
 ## Verificación y registro de dispositivo
 
+Antes de ejecutar este bloque, volvé a la **raíz del repositorio**: los pasos anteriores dejan la terminal en `frontend/`. Desde allí, usá `Set-Location ..`. Los comandos siguientes usan rutas relativas a la raíz.
+
 ```powershell
 npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build

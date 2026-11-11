@@ -12,6 +12,7 @@ export class SettingsComponent {
   readonly capabilities = inject(DeviceCapabilitiesService);
   readonly modules = NIVI_MODULES;
 
+  /** Persists a preference and restores the control to the saved value on failure. */
   async change(key: keyof NiviSettings, event: Event): Promise<void> {
     const control = event.target as HTMLInputElement;
     await this.preferences.set(key, control.checked);

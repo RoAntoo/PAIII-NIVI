@@ -60,7 +60,7 @@ Se conserva el contrato de fechas existente: los proyectos usan fecha sin hora; 
 
 ## Evidencia y pendientes
 
-- Frontend: `npm --prefix frontend test -- --watch=false` → **33 pruebas aprobadas**. Incluye restauración de ajustes con el adaptador web real, errores de storage, DTO antiguos, campos conservados, título vacío bloqueado, fallos de API, reintento y borrado confirmado.
+- Frontend: `npm --prefix frontend test -- --watch=false` → **41 pruebas aprobadas**. Incluye restauración de ajustes con el adaptador web real, errores de storage, DTO antiguos, campos conservados, título vacío bloqueado, fallos de API, reintento y borrado confirmado.
 - Backend: desde backend, JDK 21 y `.\mvnw.cmd verify '-Dnivi.build.directory=target-audit'` → **56 pruebas aprobadas**, JAR generado. Incluye HTTP + JPA + H2 reales en tests, migración repetible/rollback, defaults, metadatos, restricción de UUID único, completar/reabrir y borrado, límites por proyecto y proyectos cerrados.
 - Web: `npm --prefix frontend run build` → aprobado. Se mantienen tres warnings de presupuesto de CSS de componentes; aparece además un warning de bundle inicial (aprox. 829 kB frente a 500 kB) por incluir los estilos e iconos locales. El límite de error de 1 MB no se modificó.
 - Android: `cap add android` y `cap sync android` → aprobados, plugin Preferences registrado. Intento de compilación detenido por ausencia del SDK. **No hay APK generado, Gradle/release verificados ni prueba en Android Studio/celular.**

@@ -24,11 +24,13 @@ export class DeviceCapabilitiesService {
   readonly platform = Capacitor.getPlatform();
   readonly native = Capacitor.isNativePlatform();
 
+  /** Requires implementation, user opt-in and any necessary native plugin. */
   moduleAvailable(module: NiviModule, settings: NiviSettings): boolean {
     return module.implemented && settings[module.key]
       && (!module.plugin || (this.native && Capacitor.isPluginAvailable(module.plugin)));
   }
 
+  /** Explains module readiness or the manual-entry fallback without requesting permissions. */
   status(module: NiviModule, settings: NiviSettings): string {
     if (!module.implemented) return `Disponible después de implementar PR ${module.pr.toString().padStart(2, '0')}.`;
     if (!settings[module.key]) return 'Desactivado en Ajustes.';

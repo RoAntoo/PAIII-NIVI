@@ -35,6 +35,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}")
+    /** Deletes a task belonging to this project and returns an empty response. */
     public ResponseEntity<Void> deleteTask(@PathVariable Long projectId, @PathVariable Long taskId) {
         queries.delete(projectId, taskId);
         return ResponseEntity.noContent().build();

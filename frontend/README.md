@@ -43,4 +43,4 @@ SettingsService persiste seis flags con Preferences (SharedPreferences nativo, l
 
 Bootstrap y Bootstrap Icons se empaquetan localmente; no se requieren CDN para mostrar la interfaz. El CRUD necesita conexión hasta PR 05. La paleta usa los tokens NIVI sin rediseñar las páginas existentes.
 
-Verificación PR 01: 33 tests frontend y build de producción aprobados; detalles y limitaciones en [pr01-base.md](../docs/pr01-base.md). Si Vitest falla con EPERM en temporales, crear .angular/test-temp y configurar TEMP/TMP a esa ruta para repetir. Persisten warnings de tamaño CSS y uno de tamaño inicial por los recursos locales. npm audit reportó 60 alertas; su corrección queda en una revisión de dependencias separada.
+Verificación PR 01: 41 tests frontend y build de producción aprobados; detalles y limitaciones en [pr01-base.md](../docs/pr01-base.md). Si Vitest falla con EPERM en temporales, crear .angular/test-temp y configurar TEMP/TMP a esa ruta para repetir. Persisten warnings de tamaño CSS y uno de tamaño inicial por los recursos locales. npm audit reportó 60 alertas; su corrección queda en una revisión de dependencias separada.

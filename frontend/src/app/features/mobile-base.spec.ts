@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TaskListComponent } from './tasks/pages/task-list/task-list.component';
 import { CreateTaskComponent } from './tasks/pages/task-create/create-task.component';
+import { UpdateTaskComponent } from './tasks/pages/task-edit/update-task.component';
 import { SettingsComponent } from './settings/settings.component';
 import { SettingsService, SETTINGS_STORAGE } from '../core/settings/settings.service';
 import { environment } from '../../environments/environment';
@@ -15,10 +16,81 @@ describe('mobile base screens', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ projectId: '12' }) } } }] });
+      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ projectId: '12', taskId: '34' }) } } }] });
     http = TestBed.inject(HttpTestingController);
   });
-  afterEach(() => { http.verify(); localStorage.clear(); });
+  afterEach(() => { http.verify(); localStorage.clear(); vi.useRealTimers(); });
+
+  it('reconciles a task already absent on the server when deletion returns 404', () => {
+    const fixture = TestBed.createComponent(TaskListComponent);
+    fixture.detectChanges();
+    http.expectOne(path).flush([task]);
+    const component = fixture.componentInstance;
+    component.requestDelete(component.tasks()[0]);
+    component.confirmDelete();
+    http.expectOne(`${path}/34`).flush(null, { status: 404, statusText: 'Not Found' });
+    expect(component.tasks()).toEqual([]);
+    expect(component.pendingDelete()).toBeNull();
+    expect(component.deleteError()).toBeNull();
+    expect(component.isDeleting()).toBe(false);
+    component.confirmDelete();
+    http.expectNone(request => request.method === 'DELETE');
+  });
+
+  it('keeps a closed-project task and its dialog after a 409 deletion response', () => {
+    const fixture = TestBed.createComponent(TaskListComponent);
+    fixture.detectChanges();
+    http.expectOne(path).flush([task]);
+    const component = fixture.componentInstance;
+    component.requestDelete(component.tasks()[0]);
+    component.confirmDelete();
+    http.expectOne(`${path}/34`).flush(null, { status: 409, statusText: 'Conflict' });
+    expect(component.tasks()).toHaveLength(1);
+    expect(component.pendingDelete()).not.toBeNull();
+    expect(component.deleteError()).toContain('proyecto cerrado');
+  });
+
+  it('warns about an unknown create outcome when a saved task response is lost', () => {
+    const fixture = TestBed.createComponent(CreateTaskComponent);
+    fixture.detectChanges();
+    vi.useFakeTimers();
+    const component = fixture.componentInstance;
+    component.form.patchValue({ title: task.title, estimateHours: 1 });
+    component.onSubmit();
+    const request = http.expectOne(path);
+    // The server commits the task, but its response never reaches the client.
+    const serverTasks = [{ ...task, title: request.request.body.title }];
+    vi.advanceTimersByTime(15001);
+    expect(request.cancelled).toBe(true);
+    expect(component.successMessage()).toBeNull();
+    expect(component.loading()).toBe(false);
+    expect(component.form.controls.title.value).toBe(task.title);
+    expect(component.errorMessage()).toContain('No pudimos confirmar si la tarea se guardó');
+    expect(component.errorMessage()).toContain('Revisá la lista de tareas antes de reintentar');
+    http.expectNone(req => req.method === 'POST');
+    const list = TestBed.createComponent(TaskListComponent);
+    list.detectChanges();
+    http.expectOne(path).flush(serverTasks);
+    expect(list.componentInstance.tasks()).toHaveLength(1);
+    expect(list.componentInstance.tasks()[0].title).toBe(task.title);
+  });
+
+  it.each([
+    { status: 'TODO' as const, category: 'GENERAL' as const, expected: {} },
+    { status: 'DONE' as const, category: 'GENERAL' as const, expected: { status: 'DONE' } },
+    { status: 'TODO' as const, category: 'COMPRAS' as const, expected: { category: 'COMPRAS' } },
+    { status: 'DONE' as const, category: 'COMPRAS' as const, expected: { status: 'DONE', category: 'COMPRAS' } },
+  ])('sends only changed status/category values: $expected', ({ status, category, expected }) => {
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(UpdateTaskComponent);
+    fixture.detectChanges();
+    http.expectOne(`${path}/34`).flush({ ...task, category: 'GENERAL' });
+    fixture.componentInstance.form.patchValue({ title: 'Título editado', status, category });
+    fixture.componentInstance.onSubmit();
+    const request = http.expectOne(`${path}/34`);
+    expect(request.request.body).toEqual({ title: 'Título editado', estimateHours: 1, assignee: null, ...expected });
+    request.flush({ ...task, title: 'Título editado', status, category });
+  });
 
   it('keeps the task list after a failed deletion and permits a confirmed retry', () => {
     const fixture = TestBed.createComponent(TaskListComponent);

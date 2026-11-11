@@ -10,7 +10,7 @@
     </div>
   }
   @if (preferences.loading()) { <p role="status">Cargando ajustes…</p> }
-  <fieldset [disabled]="preferences.loading() || preferences.saving()">
+  <fieldset [disabled]="preferences.loading() || preferences.saving() || !preferences.loaded()">
     <legend class="fs-5">Módulos opcionales</legend>
     @for (module of modules; track module.key) {
       <div class="border-bottom py-3">

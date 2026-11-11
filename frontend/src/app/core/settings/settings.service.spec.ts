@@ -57,4 +57,24 @@ describe('persisted module settings', () => {
     expect(service.settings().enableQr).toBe(false);
     expect(service.error()).toBeNull();
   });
+
+  it('blocks writes after failed reads until reload succeeds without losing existing flags', async () => {
+    const stored = { ...DEFAULT_SETTINGS, enableVoice: false, enableQr: false };
+    const storage = { get: vi.fn().mockRejectedValueOnce(new Error('Read failed'))
+      .mockRejectedValueOnce(new Error('Still unavailable'))
+      .mockResolvedValue({ value: JSON.stringify(stored) }), set: vi.fn().mockResolvedValue(undefined) };
+    TestBed.configureTestingModule({ providers: [{ provide: SETTINGS_STORAGE, useValue: storage }] });
+    const service = TestBed.inject(SettingsService);
+    await service.ready;
+    await service.set('enableOcr', false);
+    expect(storage.set).not.toHaveBeenCalled();
+    expect(service.loaded()).toBe(false);
+    await service.reload();
+    await service.set('enableOcr', false);
+    expect(storage.set).not.toHaveBeenCalled();
+    await service.reload();
+    expect(service.loaded()).toBe(true);
+    await service.set('enableOcr', false);
+    expect(JSON.parse(storage.set.mock.calls[0][0].value)).toEqual({ ...stored, enableOcr: false });
+  });
 });

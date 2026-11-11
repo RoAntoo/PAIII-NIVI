@@ -13,14 +13,17 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
 
     private final ITaskRepository taskRepository;
     private final java.time.Clock clock;
+    /** Preserves callers that use the default local clock. */
     public UpdateTaskUseCase(ITaskRepository taskRepository){
         this(taskRepository, java.time.Clock.systemDefaultZone());
     }
+    /** Creates task updates with an explicit clock for completion timestamps. */
     public UpdateTaskUseCase(ITaskRepository taskRepository, java.time.Clock clock){
         this.taskRepository = taskRepository;
         this.clock = clock;
     }
 
+    /** Validates the partial command before applying changes to an open-project task. */
     @Override
     public Task updateTask(Long id, UpdateTaskDTO dto) {
         Task existingTask = taskRepository.findById(id)

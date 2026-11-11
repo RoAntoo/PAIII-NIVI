@@ -16,5 +16,6 @@ public class TaskRepositoryAdapter implements ITaskRepository {
  public Optional<Task> findByIdAndProjectId(Long id,Long p){return repository.findByIdAndProjectId(id,p).map(PersistenceMapper::task);}
  public List<Task> findByProjectId(Long p){return repository.findByProjectId(p).stream().map(PersistenceMapper::task).toList();}
  public boolean existsById(Long id){return repository.existsById(id);}
+ /** Deletes and flushes the task inside the adapter transaction. */
  public void delete(Task task){repository.deleteById(task.getId());repository.flush();}
 }

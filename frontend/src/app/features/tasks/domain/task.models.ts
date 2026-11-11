@@ -36,6 +36,7 @@ export type TaskDto = Omit<TaskResponse, 'source' | 'category'> & {
   source?: TaskSource | null; category?: TaskCategory | null;
 };
 
+/** Adds defaults for legacy metadata while retaining every original DTO field. */
 export function taskFromDto(dto: TaskDto): TaskResponse {
   return { ...dto, source: dto.source ?? 'MANUAL', category: dto.category ?? 'GENERAL' };
 }
@@ -48,6 +49,7 @@ export interface UpdateTaskDto {
   category?: TaskCategory;
 }
 
+/** Rejects invalid supplied fields before sending a create or partial update. */
 export function validateTaskInput(input: TaskRequest | UpdateTaskDto): void {
   if (input.title !== undefined && (!input.title.trim() || input.title.length > 255)) {
     throw new Error('El título es obligatorio y admite hasta 255 caracteres.');

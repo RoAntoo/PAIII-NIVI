@@ -38,12 +38,14 @@ export class UpdateTaskComponent implements OnInit {
     category: ['GENERAL' as TaskCategory, Validators.required],
   });
 
+  /** Resolves the project/task route and loads the editable task. */
   ngOnInit(): void {
     this.projectId = Number(this.route.snapshot.paramMap.get('projectId'));
     this.taskId = Number(this.route.snapshot.paramMap.get('taskId'));
     this.loadTask();
   }
 
+  /** Loads the task and retains its original values for partial updates. */
   loadTask(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
@@ -71,8 +73,9 @@ export class UpdateTaskComponent implements OnInit {
     });
   }
 
+  /** Saves edits, including status/category only when they differ from the loaded task. */
   onSubmit(): void {
-    if (this.isSaving() || this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.isSaving() || this.form.invalid || !this.task()) { this.form.markAllAsTouched(); return; }
 
     this.isSaving.set(true);
     this.errorMessage.set(null);
@@ -84,8 +87,8 @@ export class UpdateTaskComponent implements OnInit {
         title: title!.trim(),
         estimateHours: estimateHours!,
         assignee: assignee?.trim() || null,
-        status: status!,
-        category: category!,
+        ...(status !== this.task()!.status ? { status: status! } : {}),
+        ...(category !== this.task()!.category ? { category: category! } : {}),
       })
       .subscribe({
         next: () => {
