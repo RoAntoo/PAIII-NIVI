@@ -14,7 +14,7 @@ class ReviewFixTest {
     /** Deserializes each request and checks the persisted assignee and repository call. */
     @Test void preservesPresenceThroughDeserializationAndSave() throws Exception {
         for (String request : new String[]{"{}", "{\"assignee\":null}", "{\"assignee\":\"Luis\"}"}) {
-            UpdateTaskDTO dto = new ObjectMapper().readValue(request, UpdateTaskDTO.class);
+            UpdateTaskDTO dto = new ObjectMapper().readValue(request, com.pa.proyecto.backend_integrator.adapter.web.UpdateTaskRequest.class).toCommand();
             Task task = new Task(); task.setAssignee("Ana");
             ITaskRepository repository = mock(ITaskRepository.class);
             when(repository.findById(1L)).thenReturn(Optional.of(task));

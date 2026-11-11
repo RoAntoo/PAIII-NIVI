@@ -11,6 +11,10 @@ export class TaskService {
   private http = inject(HttpClient);
   private baseUrl = environment.apiUrl;
 
+  getRecentTasks(): Observable<{task: TaskResponse; projectId: number; projectName: string}[]> {
+    return this.http.get<{task: TaskResponse; projectId: number; projectName: string}[]>(this.baseUrl + '/projects/recent-tasks');
+  }
+
   createTask(projectId: number, task: TaskRequest): Observable<TaskResponse> {
     return this.http.post<TaskResponse>(`${this.baseUrl}/projects/${projectId}/tasks`, task);
   }

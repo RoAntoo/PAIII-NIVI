@@ -1,6 +1,6 @@
 package com.pa.proyecto.backend_integrator.config;
 
-import com.pa.proyecto.backend_integrator.adapter.persistence.ProjectSpecification;
+
 import com.pa.proyecto.backend_integrator.core.output.IProjectRepository;
 import com.pa.proyecto.backend_integrator.core.output.ITaskRepository;
 import com.pa.proyecto.backend_integrator.core.usecase.*;
@@ -11,6 +11,11 @@ import java.time.Clock;
 
 @Configuration
 public class UseCaseConfig {
+ @Bean public RecentTasksUseCase recentTasks(ITaskRepository tasks){return new RecentTasksUseCase(tasks);}
+
+ @Bean public ProjectQueriesUseCase projectQueries(IProjectRepository p){return new ProjectQueriesUseCase(p);}
+ @Bean public TaskQueriesUseCase taskQueries(ITaskRepository t,IProjectRepository p){return new TaskQueriesUseCase(t,p);}
+
 
     @Bean
     public Clock clock() {
@@ -30,10 +35,9 @@ public class UseCaseConfig {
 
     @Bean
     public FindAllProjectsUseCase findAllProjectsUseCase(
-            IProjectRepository projectRepository,
-            ProjectSpecification projectSpecification) {
+            IProjectRepository projectRepository) {
 
-        return new FindAllProjectsUseCase(projectRepository, projectSpecification);
+        return new FindAllProjectsUseCase(projectRepository);
     }
 
     // TASK
