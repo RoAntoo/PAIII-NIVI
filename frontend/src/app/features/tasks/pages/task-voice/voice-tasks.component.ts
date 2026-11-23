@@ -1,24 +1,13 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TimeoutError, firstValueFrom } from 'rxjs';
 import { DeviceCapabilitiesService, VOICE_MODULE } from '../../../../core/device/device-capabilities.service';
 import { SpeechLanguage, SpeechService } from '../../../../core/device/speech.service';
 import { SettingsService } from '../../../../core/settings/settings.service';
-import { TaskService } from '../../data-access/task-api.service';
-import { TASK_CATEGORIES, TASK_CATEGORY_LABELS, TaskCategory, TaskRequest, validateTaskInput } from '../../domain/task.models';
+import { TaskDraft, TaskDraftBatch } from '../../data-access/task-draft-batch';
+import { TASK_CATEGORIES, TASK_CATEGORY_LABELS, TaskCategory } from '../../domain/task.models';
 import { parseTaskText } from '../../domain/task-text-parser';
 
 type DictationPhase = 'idle' | 'preparing' | 'listening' | 'stopping' | 'canceling';
-
-interface VoiceDraft {
-  id: string;
-  title: string;
-  estimateHours: number | null;
-  category: TaskCategory;
-  saved: boolean;
-}
 
 const speechErrors: Readonly<Record<string, string>> = {
   PERMISSION: 'El micrófono está deshabilitado. Podés habilitarlo en los permisos de Android o escribir la tarea.',
@@ -36,6 +25,7 @@ const speechErrors: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-voice-tasks',
   imports: [RouterLink],
+  providers: [TaskDraftBatch],
   templateUrl: './voice-tasks.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -43,7 +33,7 @@ export class VoiceTasksComponent {
   private readonly speech = inject(SpeechService);
   private readonly preferences = inject(SettingsService);
   private readonly capabilities = inject(DeviceCapabilitiesService);
-  private readonly taskService = inject(TaskService);
+  private readonly batch = inject(TaskDraftBatch);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -51,11 +41,11 @@ export class VoiceTasksComponent {
   readonly validProject = Number.isSafeInteger(this.projectId) && this.projectId > 0;
   readonly phase = signal<DictationPhase>('idle');
   readonly speechMessage = signal<string | null>(null);
-  readonly saving = signal(false);
-  readonly saveError = signal<string | null>(null);
-  readonly rows = signal<VoiceDraft[]>([]);
+  readonly saving = this.batch.saving;
+  readonly saveError = this.batch.error;
+  readonly rows = this.batch.rows;
   readonly reviewing = signal(false);
-  readonly retryRequest = signal<TaskRequest | null>(null);
+  readonly retryRequest = this.batch.retryRequest;
   readonly categories = TASK_CATEGORIES;
   readonly categoryLabels = TASK_CATEGORY_LABELS;
   readonly preferencesLoading = this.preferences.loading.asReadonly();
@@ -64,8 +54,8 @@ export class VoiceTasksComponent {
   readonly unavailableMessage = computed(() => this.preferences.loaded()
     ? this.capabilities.status(VOICE_MODULE, this.preferences.settings())
     : 'No se pudieron leer tus preferencias. Podés recuperarlas desde Ajustes.');
-  readonly savedCount = computed(() => this.rows().filter(row => row.saved).length);
-  readonly pendingCount = computed(() => this.rows().length - this.savedCount());
+  readonly savedCount = this.batch.savedCount;
+  readonly pendingCount = this.batch.pendingCount;
 
   private attempt = 0;
   private language: SpeechLanguage = 'es-AR';
@@ -106,7 +96,7 @@ export class VoiceTasksComponent {
         this.speechMessage.set(speechErrors['EMPTY']);
         return;
       }
-      this.rows.update(rows => [...rows, ...titles.map(title => this.newDraft(title))]);
+      this.rows.update(rows => [...rows, ...titles.map(title => this.batch.draft(title))]);
       this.reviewing.set(true);
     } catch (error) {
       if (!this.currentAttempt(attempt) || this.phase() === 'canceling') return;
@@ -157,36 +147,36 @@ export class VoiceTasksComponent {
   }
 
   addRow(): void {
-    this.rows.update(rows => [...rows, this.newDraft('')]);
+    this.rows.update(rows => [...rows, this.batch.draft('')]);
   }
 
-  updateRow(row: VoiceDraft, changes: Partial<Pick<VoiceDraft, 'title' | 'estimateHours' | 'category'>>): void {
+  updateRow(row: TaskDraft, changes: Partial<Pick<TaskDraft, 'title' | 'estimateHours' | 'category'>>): void {
     this.rows.update(rows => rows.map(entry => entry.id === row.id ? { ...entry, ...changes } : entry));
   }
 
-  changeCategory(row: VoiceDraft, value: string): void {
+  changeCategory(row: TaskDraft, value: string): void {
     const category = this.categories.find(entry => entry === value);
     if (category) this.updateRow(row, { category });
   }
 
-  removeRow(row: VoiceDraft): void {
+  removeRow(row: TaskDraft): void {
     this.rows.update(rows => rows.filter(entry => entry.id !== row.id));
   }
 
-  splitRow(row: VoiceDraft, cursor: number): void {
+  splitRow(row: TaskDraft, cursor: number): void {
     const before = row.title.slice(0, cursor).trim();
     const after = row.title.slice(cursor).trim();
     if (!before || !after) {
       this.saveError.set('Ubicá el cursor entre las dos partes del título para dividirlo.');
       return;
     }
-    const second = { ...this.newDraft(after), category: row.category };
+    const second = { ...this.batch.draft(after), category: row.category };
     this.rows.update(rows => rows.flatMap(entry => entry.id === row.id
       ? [{ ...entry, title: before }, second] : [entry]));
     this.saveError.set(null);
   }
 
-  joinWithPrevious(row: VoiceDraft, previous: VoiceDraft): void {
+  joinWithPrevious(row: TaskDraft, previous: TaskDraft): void {
     const title = [previous.title.trim(), row.title.trim()].filter(Boolean).join(' ');
     this.rows.update(rows => rows.filter(entry => entry.id !== row.id)
       .map(entry => entry.id === previous.id ? { ...entry, title } : entry));
@@ -194,76 +184,13 @@ export class VoiceTasksComponent {
   }
 
   async save(): Promise<void> {
-    if (!this.canDictate() || this.saving() || this.phase() !== 'idle' || !this.pendingCount()) return;
-    this.saveError.set(null);
-    const retry = this.retryRequest();
-    const pending = this.rows().filter(row => !row.saved && row.id !== retry?.clientRequestId);
-    const requests: TaskRequest[] = [];
-    if (retry) requests.push(retry);
-    try {
-      pending.forEach((row, index) => {
-        try {
-          const request: TaskRequest = {
-            id: null,
-            title: row.title.trim(),
-            estimateHours: row.estimateHours ?? 0,
-            assignee: null,
-            status: 'TODO',
-            source: 'VOZ',
-            category: row.category,
-            clientRequestId: row.id,
-          };
-          validateTaskInput(request);
-          requests.push(request);
-        } catch (error) {
-          const number = index + 1 + Number(Boolean(retry));
-          throw new Error('Tarea pendiente ' + number + '. ' + (error as Error).message);
-        }
-      });
-    } catch (error) {
-      this.saveError.set((error as Error).message);
-      return;
-    }
-
-    this.saving.set(true);
-    try {
-      for (const request of requests) {
-        try {
-          await firstValueFrom(this.taskService.createTask(this.projectId, request)
-            .pipe(takeUntilDestroyed(this.destroyRef)));
-        } catch (error) {
-          if (!this.destroyRef.destroyed) this.showSaveFailure(request, error);
-          return;
-        }
-        if (this.destroyRef.destroyed) return;
-        this.rows.update(rows => rows.map(row => row.id === request.clientRequestId ? { ...row, saved: true } : row));
-        this.retryRequest.set(null);
-      }
+    if (!this.canDictate() || this.phase() !== 'idle') return;
+    if (await this.batch.save(this.projectId, 'VOZ')) {
       await this.router.navigate(['/projects', this.projectId, 'tasks']);
-    } finally {
-      if (!this.destroyRef.destroyed) this.saving.set(false);
     }
   }
 
   private currentAttempt(attempt: number): boolean {
     return !this.destroyRef.destroyed && attempt === this.attempt;
-  }
-
-  private newDraft(title: string): VoiceDraft {
-    return { id: crypto.randomUUID(), title, estimateHours: 1, category: 'GENERAL', saved: false };
-  }
-
-  private showSaveFailure(request: TaskRequest, error: unknown): void {
-    const status = error instanceof HttpErrorResponse ? error.status : undefined;
-    if (this.retryRequest() || error instanceof TimeoutError || status === 0 || (status !== undefined && status >= 500)) {
-      this.retryRequest.set(request);
-      this.saveError.set('No pudimos confirmar el guardado de una tarea. Reintentá para comprobar la misma solicitud y guardar las que quedan.');
-    } else if (status === 409) {
-      this.saveError.set('No se pueden agregar tareas a un proyecto cerrado.');
-    } else if (status === 404) {
-      this.saveError.set('El proyecto no existe.');
-    } else {
-      this.saveError.set('No se pudo guardar una tarea. Revisá los datos e intentá de nuevo.');
-    }
   }
 }

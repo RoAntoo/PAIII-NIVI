@@ -58,7 +58,7 @@ class MobileTaskApiTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"OCR", "VOZ"})
+    @ValueSource(strings = {"OCR", "VOZ", "QR"})
     void metadataAndExistingFieldsSurviveRoundTripAndPartialUpdate(String source) throws Exception {
         String clientId = java.util.UUID.randomUUID().toString();
         String p = project(), t = task(p, ",\"source\":\"" + source + "\",\"category\":\"COMPRAS\",\"clientRequestId\":\"" + clientId + "\"");
