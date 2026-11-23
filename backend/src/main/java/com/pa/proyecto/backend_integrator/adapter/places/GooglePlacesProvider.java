@@ -83,7 +83,7 @@ public class GooglePlacesProvider implements PlacesProvider {
                 .header("X-Goog-FieldMask", DETAILS_FIELDS)
                 .retrieve().body(GooglePlace.class), true);
         Place place = toPlace(response);
-        if (place == null) throw new PlacesException(UNAVAILABLE);
+        if (place == null) throw new PlacesException(UNEXPECTED_RESPONSE);
         return place;
     }
 
@@ -92,7 +92,7 @@ public class GooglePlacesProvider implements PlacesProvider {
         if (!limit.acquire()) throw new PlacesException(LIMITED);
         try {
             T result = action.get();
-            if (result == null) throw new PlacesException(UNAVAILABLE);
+            if (result == null) throw new PlacesException(UNEXPECTED_RESPONSE);
             return result;
         } catch (RestClientResponseException error) {
             int status = error.getStatusCode().value();
@@ -102,7 +102,9 @@ public class GooglePlacesProvider implements PlacesProvider {
             }
             if (status == 404 && details) throw new PlacesException(NOT_FOUND);
             if (status == 408 || status == 504) throw new PlacesException(TIMEOUT);
-            throw new PlacesException(UNAVAILABLE);
+            if (status == 400) throw new PlacesException(REQUEST_REJECTED);
+            if (status == 403) throw new PlacesException(ACCESS_DENIED);
+            throw new PlacesException(error.getStatusCode().is5xxServerError() ? UNAVAILABLE : UNEXPECTED_RESPONSE);
         } catch (ResourceAccessException error) {
             Throwable cause = error.getMostSpecificCause();
             if (cause instanceof SocketTimeoutException) {
@@ -110,7 +112,7 @@ public class GooglePlacesProvider implements PlacesProvider {
             }
             throw new PlacesException(UNAVAILABLE);
         } catch (RestClientException error) {
-            throw new PlacesException(UNAVAILABLE);
+            throw new PlacesException(UNEXPECTED_RESPONSE);
         } finally {
             limit.release();
         }

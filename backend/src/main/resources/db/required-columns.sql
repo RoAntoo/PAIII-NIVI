@@ -1,4 +1,4 @@
--- H2: runs after Hibernate creates/updates the existing tables.
+-- H2: tightens existing tables. Hibernate creates them first on a fresh database.
 -- Existing null values must be repaired before startup; do not fabricate defaults.
 ALTER TABLE projects ALTER COLUMN start_date SET NOT NULL;
 ALTER TABLE projects ALTER COLUMN end_date SET NOT NULL;

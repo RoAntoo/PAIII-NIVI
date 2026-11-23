@@ -139,4 +139,15 @@ describe('task place suggestions', () => {
     click('No me interesa');
     expect(fixture.nativeElement.textContent).not.toContain('Buscar ferreterías');
   });
+
+  it('keeps each dismissed category hidden for the rest of the form', () => {
+    click('No me interesa');
+    fixture.componentRef.setInput('title', 'Comprar medicamentos');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Buscar farmacias');
+    click('No me interesa');
+    fixture.componentRef.setInput('title', 'Comprar tornillos');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Buscar ferreterías');
+  });
 });

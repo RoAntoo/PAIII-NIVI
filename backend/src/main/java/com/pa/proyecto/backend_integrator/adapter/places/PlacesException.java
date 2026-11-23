@@ -8,6 +8,9 @@ public final class PlacesException extends RuntimeException {
         LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Places request limit reached"),
         TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "Places provider timed out"),
         UNAVAILABLE(HttpStatus.BAD_GATEWAY, "Places provider unavailable"),
+        REQUEST_REJECTED(HttpStatus.BAD_GATEWAY, "Places provider rejected the backend request (HTTP 400)"),
+        ACCESS_DENIED(HttpStatus.BAD_GATEWAY, "Places provider denied access to the backend (HTTP 403)"),
+        UNEXPECTED_RESPONSE(HttpStatus.BAD_GATEWAY, "Places provider returned an unexpected response"),
         NOT_FOUND(HttpStatus.NOT_FOUND, "Place not found");
 
         private final HttpStatus status;

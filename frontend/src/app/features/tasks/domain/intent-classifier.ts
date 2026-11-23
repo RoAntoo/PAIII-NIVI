@@ -19,7 +19,7 @@ export const PLACE_LABELS: Record<PlaceCategory, string> = {
 
 export function classifyIntent(title: string): PlaceIntent | null {
   const clauses = title.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
-    .split(/[,;.!?\n]+|\b(?:pero|luego)\b|\by\s+(?=(?:no\s+)?(?:comprar|conseguir|retirar|hacer|ir|estudiar)\b)/)
+    .split(/[,;.!?\n]+|\b(?:pero|luego)\b|\by\s+(?=(?:no\s+)?(?:comprar|conseguir|retirar|buscar|hacer|ir|estudiar)\b)/)
     .map(clause => clause.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim());
 
   const candidates = new Map<PlaceCategory, PlaceIntent>();
@@ -31,10 +31,11 @@ export function classifyIntent(title: string): PlaceIntent | null {
     if (shopAction.test(clause) && /\b(?:farmacias?|medicamentos?|remedios?)\b/.test(clause)) {
       candidates.set('PHARMACY', { category: 'PHARMACY', confidence: 'clear' });
     }
-    if (healthAction.test(clause) && clinicalTest.test(clause)) {
+    const isClinical = clinicalTest.test(clause);
+    if (healthAction.test(clause) && isClinical) {
       candidates.set('LABORATORY', { category: 'LABORATORY', confidence: 'clear' });
-    } else if (!candidates.has('LABORATORY') && /\b(?:retirar|buscar|recoger)\b.*\banalisis\b/.test(clause)) {
-      candidates.set('LABORATORY', { category: 'LABORATORY', confidence: clinicalTest.test(clause) ? 'clear' : 'ambiguous' });
+    } else if ((isClinical || !candidates.has('LABORATORY')) && /\b(?:retirar|buscar|recoger)\b.*\banalisis\b/.test(clause)) {
+      candidates.set('LABORATORY', { category: 'LABORATORY', confidence: isClinical ? 'clear' : 'ambiguous' });
     }
   }
   return candidates.size === 1 ? candidates.values().next().value ?? null : null;

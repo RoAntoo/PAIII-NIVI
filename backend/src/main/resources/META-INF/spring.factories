@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.pa.proyecto.backend_integrator.config.SchemaValidationEnvironmentPostProcessor

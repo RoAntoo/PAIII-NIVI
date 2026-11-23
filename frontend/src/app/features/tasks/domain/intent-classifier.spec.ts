@@ -8,9 +8,12 @@ describe('classifyIntent', () => {
     ['Hacerme análisis de sangre', 'LABORATORY', 'clear'],
     ['Realizar analisis de sangre', 'LABORATORY', 'clear'],
     ['Retirar los análisis', 'LABORATORY', 'ambiguous'],
+    ['Retirar los análisis; retirar los análisis de sangre', 'LABORATORY', 'clear'],
+    ['Retirar los análisis de sangre; retirar los análisis', 'LABORATORY', 'clear'],
     ['Comprar medicamentos', 'PHARMACY', 'clear'],
     ['Comprar un remedio', 'PHARMACY', 'clear'],
     ['No comprar tornillos, pero ir a la farmacia', 'PHARMACY', 'clear'],
+    ['Comprar tornillos y no buscar medicamentos', 'HARDWARE', 'clear'],
   ])('classifies %s', (title, category, confidence) => {
     expect(classifyIntent(title)).toEqual({ category, confidence });
   });

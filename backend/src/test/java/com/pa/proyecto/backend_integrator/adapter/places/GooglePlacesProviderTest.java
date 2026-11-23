@@ -4,6 +4,8 @@ import com.pa.proyecto.backend_integrator.core.output.PlacesProvider.Category;
 import com.pa.proyecto.backend_integrator.core.output.PlacesProvider.NearbySearch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -93,6 +95,36 @@ class GooglePlacesProviderTest {
         var failure = assertThrows(PlacesException.class, () -> provider.searchNearby(SEARCH));
         assertEquals(HttpStatus.GATEWAY_TIMEOUT, failure.status());
         assertFalse(failure.getMessage().contains("socket details"));
+        server.verify();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "400, PLACES_REQUEST_REJECTED",
+            "403, PLACES_ACCESS_DENIED",
+            "500, PLACES_UNAVAILABLE",
+            "502, PLACES_UNAVAILABLE",
+            "504, PLACES_TIMEOUT",
+            "404, PLACES_UNEXPECTED_RESPONSE"
+    })
+    void classifiesProviderErrorsWithoutExposingTheirPayload(int status, String code) {
+        server.expect(requestTo(NEARBY))
+                .andRespond(withStatus(HttpStatus.valueOf(status)).body("private upstream response"));
+        var failure = assertThrows(PlacesException.class, () -> provider.searchNearby(SEARCH));
+        assertEquals(code, failure.code());
+        assertEquals(status == 504 ? HttpStatus.GATEWAY_TIMEOUT : HttpStatus.BAD_GATEWAY, failure.status());
+        assertFalse(failure.getMessage().contains("private upstream response"));
+        assertNull(failure.getCause());
+        server.verify();
+    }
+
+    @Test
+    void stillReportsMissingPlaceDetailsAsNotFound() {
+        server.expect(requestTo("https://places.googleapis.com/v1/places/ChIJ_test?languageCode=es"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+        var failure = assertThrows(PlacesException.class, () -> provider.getPlace("ChIJ_test"));
+        assertEquals(HttpStatus.NOT_FOUND, failure.status());
+        assertEquals("PLACES_NOT_FOUND", failure.code());
         server.verify();
     }
 

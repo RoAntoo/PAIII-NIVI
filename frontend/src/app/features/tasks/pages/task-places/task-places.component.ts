@@ -24,7 +24,7 @@ export class TaskPlacesComponent {
   private readonly location = inject(LocationService);
   private readonly api = inject(PlacesApiService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dismissed = signal<PlaceCategory | null>(null);
+  private readonly dismissed = signal<ReadonlySet<PlaceCategory>>(new Set());
   private readonly association = signal<{ requestedId: string; place: Place } | null>(null);
   private request?: Subscription;
 
@@ -37,7 +37,7 @@ export class TaskPlacesComponent {
     && this.capabilities.moduleAvailable(PLACE_MODULE, this.preferences.settings()));
   readonly suggestion = computed(() => {
     const intent = this.intent();
-    return this.enabled() && !this.disabled() && intent && intent.category !== this.dismissed() ? intent : null;
+    return this.enabled() && !this.disabled() && intent && !this.dismissed().has(intent.category) ? intent : null;
   });
   readonly associatedPlace = computed(() => {
     const association = this.association();
@@ -67,7 +67,8 @@ export class TaskPlacesComponent {
   }
 
   dismiss(): void {
-    this.dismissed.set(this.category() ?? null);
+    const category = this.category();
+    if (category) this.dismissed.update(previous => new Set([...previous, category]));
     if (this.pending() === 'nearby') this.request?.unsubscribe();
     this.nearby.set(null);
     this.searchError.set('');
