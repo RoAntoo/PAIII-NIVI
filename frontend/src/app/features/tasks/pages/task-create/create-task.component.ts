@@ -4,11 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TaskService } from '../../data-access/task-api.service';
 import { TaskRequest, TaskStatus, TaskCategory, TASK_CATEGORIES, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 import { TimeoutError } from 'rxjs';
+import { TaskPlacesComponent } from '../task-places/task-places.component';
 
 @Component({
   selector: 'app-create-task',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TaskPlacesComponent],
   templateUrl: './create-task.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './create-task.component.css'
@@ -26,6 +27,7 @@ export class CreateTaskComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
   readonly unknownOutcome = signal(false);
+  readonly selectedPlaceId = signal<string | null>(null);
   private pendingRequest: TaskRequest | null = null;
 
   form = this.fb.group({
@@ -59,6 +61,7 @@ export class CreateTaskComponent implements OnInit {
         category: this.form.value.category!,
         source: 'MANUAL',
         clientRequestId: crypto.randomUUID(),
+        ...(this.selectedPlaceId() ? { placeId: this.selectedPlaceId() } : {}),
       };
     this.form.disable();
     this.taskService
@@ -67,6 +70,7 @@ export class CreateTaskComponent implements OnInit {
         next: () => {
           this.unknownOutcome.set(false);
           this.pendingRequest = null;
+          this.selectedPlaceId.set(null);
           this.loading.set(false);
           this.successMessage.set('Tarea creada exitosamente. Redirigiendo...');
           this.form.reset({ status: 'TODO', category: 'GENERAL' });

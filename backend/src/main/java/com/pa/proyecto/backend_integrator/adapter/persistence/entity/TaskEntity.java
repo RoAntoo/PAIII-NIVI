@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import com.pa.proyecto.backend_integrator.core.model.enums.*;
+import com.pa.proyecto.backend_integrator.core.model.PlaceIds;
 @Getter @Setter @Entity
 @Table(name="tasks")
 public class TaskEntity {
@@ -18,5 +19,6 @@ public class TaskEntity {
  @Enumerated(EnumType.STRING) @Column(nullable=false, columnDefinition="varchar(20) default 'GENERAL'")
  private TaskCategory category = TaskCategory.GENERAL;
  private java.util.UUID clientRequestId;
+ @Column(length=PlaceIds.MAX_LENGTH) private String placeId;
  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="project_id",nullable=false) private ProjectEntity project;
 }

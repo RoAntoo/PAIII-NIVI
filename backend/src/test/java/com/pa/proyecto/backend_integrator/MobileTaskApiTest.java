@@ -87,6 +87,22 @@ class MobileTaskApiTest {
         mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$.length()").value(2));
     }
 
+    @Test void placeAssociationIsOptionalPersistsAndCanBeRemoved() throws Exception {
+        String p = project();
+        String t = task(p, ",\"placeId\":\"ChIJ_test\"");
+        mvc.perform(get(t)).andExpect(jsonPath("$.placeId").value("ChIJ_test"))
+                .andExpect(jsonPath("$.lat").doesNotExist()).andExpect(jsonPath("$.lng").doesNotExist());
+        mvc.perform(put(t).contentType("application/json").content("{\"title\":\"Comprar clavos\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.placeId").value("ChIJ_test"));
+        mvc.perform(put(t).contentType("application/json").content("{\"placeId\":\"invalid/place\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(t)).andExpect(jsonPath("$.placeId").value("ChIJ_test"));
+        mvc.perform(put(t).contentType("application/json").content("{\"placeId\":null}"))
+                .andExpect(status().isOk());
+        mvc.perform(get(t)).andExpect(jsonPath("$.placeId").doesNotExist())
+                .andExpect(jsonPath("$.title").value("Comprar clavos"));
+    }
+
     @Test void simultaneousCreatesWithSameKeyReturnOneTask() throws Exception {
         String p = project();
         long projectId = Long.parseLong(p.substring("/projects/".length()));

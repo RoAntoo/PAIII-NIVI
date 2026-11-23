@@ -1,6 +1,6 @@
-# Android — NIVI PR 01
+# Android — NIVI
 
-El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1 están fijados en package-lock.json. App ID: `ar.edu.nivi.app`; nombre: **NIVI**; contenido web empaquetado, sin servidor de live reload.
+El proyecto usa Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0, Preferences 8.0.1 y Geolocation 8.2.5 están fijados en `package-lock.json`. El APK empaqueta el contenido web de **NIVI** con el identificador `ar.edu.nivi.app`.
 
 ## Requisitos
 
@@ -10,7 +10,7 @@ El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Pr
 - Gradle Wrapper 9.6.0 incluido. Su primera ejecución y la descarga de dependencias requieren internet.
 - Backend Java 21 y H2 con las variables de autenticación del README configuradas. `.env.example` es referencia: no se carga automáticamente.
 
-La configuración concreta del template instalado está en `frontend/android/variables.gradle` y `gradle/wrapper/gradle-wrapper.properties`. No instalar plugins de los PR siguientes todavía.
+La configuración del proyecto Android está en `frontend/android/variables.gradle` y `frontend/android/gradle/wrapper/gradle-wrapper.properties`.
 
 ## Backend y conectividad
 
@@ -64,7 +64,7 @@ npm run android:sync
 
 El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada; su ejecución de release aún no se validó. Este PR no configura firma release ni Play Store.
 
-Android declara `INTERNET` y `RECORD_AUDIO`. NIVI pide acceso al micrófono al iniciar un dictado. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
+NIVI pide acceso al micrófono al iniciar un dictado y permiso de ubicación aproximada al pulsar **Buscar cerca**. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
 
 ## Dictado por voz (PR 02)
 
@@ -77,6 +77,8 @@ Desde el listado de tareas de un proyecto, abrí **Dictar tarea**. El dictado us
 - [ ] Desactivar voz en Ajustes y comprobar que **Nueva Tarea** sigue disponible. Registrar modelo, versión de Android y evidencia.
 
 ## Verificación y registro de dispositivo
+
+Para validar ubicación y búsqueda con Google Places, consultá [PR 04 · Sugerencias de lugares cercanos](pr04-lugares.md).
 
 Antes de ejecutar este bloque, volvé a la **raíz del repositorio**: los pasos anteriores dejan la terminal en `frontend/`. Desde allí, usá `Set-Location ..`. Los comandos siguientes usan rutas relativas a la raíz.
 

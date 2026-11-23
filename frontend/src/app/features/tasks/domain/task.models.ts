@@ -15,6 +15,7 @@ export interface TaskRequest {
   source?: TaskSource;
   category?: TaskCategory;
   clientRequestId?: string;
+  placeId?: string | null;
 }
 
 export interface TaskResponse {
@@ -29,6 +30,7 @@ export interface TaskResponse {
   source: TaskSource;
   category: TaskCategory;
   clientRequestId?: string | null;
+  placeId?: string | null;
 }
 
 /** HTTP data can predate the additive PR01 metadata. Preserve all original fields. */
@@ -47,6 +49,7 @@ export interface UpdateTaskDto {
   assignee?: string | null;
   status?: TaskStatus;
   category?: TaskCategory;
+  placeId?: string | null;
 }
 
 /** Rejects invalid supplied fields before sending a create or partial update. */
@@ -59,6 +62,7 @@ export function validateTaskInput(input: TaskRequest | UpdateTaskDto): void {
     throw new Error('Las horas deben ser un entero entre 1 y 2147483647.');
   }
   if (input.assignee != null && input.assignee.length > 255) throw new Error('El responsable admite hasta 255 caracteres.');
+  if (input.placeId != null && !/^[A-Za-z0-9_-]{1,1024}$/.test(input.placeId)) throw new Error('Lugar inválido.');
   if (input.category !== undefined && !TASK_CATEGORIES.includes(input.category)) throw new Error('Categoría inválida.');
   if (input.status !== undefined && !['TODO', 'IN_PROGRESS', 'DONE'].includes(input.status)) throw new Error('Estado inválido.');
   if ('source' in input && input.source !== undefined && !['MANUAL', 'VOZ', 'OCR', 'QR'].includes(input.source)) {

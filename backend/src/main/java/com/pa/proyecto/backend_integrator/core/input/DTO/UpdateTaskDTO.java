@@ -1,12 +1,14 @@
 package com.pa.proyecto.backend_integrator.core.input.DTO;
 
 
-/** Partial task update; presence of assignee distinguishes omission from explicit null. */
+/** Partial update that distinguishes omitted fields from explicit removal. */
 public final class UpdateTaskDTO {
     private String title;
     private Integer estimateHours;
     private String assignee;
     private boolean assigneePresent;
+    private String placeId;
+    private boolean placeIdPresent;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
 
@@ -51,5 +53,14 @@ public final class UpdateTaskDTO {
     public void setAssignee(String assignee) {
         this.assignee = assignee;
         this.assigneePresent = true;
+    }
+
+    public String placeId() { return placeId; }
+
+    public boolean hasPlaceId() { return placeIdPresent; }
+
+    public void setPlaceId(String placeId) {
+        this.placeId = placeId;
+        this.placeIdPresent = true;
     }
 }

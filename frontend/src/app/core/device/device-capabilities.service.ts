@@ -15,11 +15,15 @@ export const VOICE_MODULE: NiviModule = {
   key: 'enableVoice', label: 'Dictado por voz', pr: 2, plugin: VOICE_PLUGIN_NAME, implemented: true,
 };
 
+export const PLACE_MODULE: NiviModule = {
+  key: 'enablePlaceSuggestions', label: 'Sugerencias de lugares', pr: 4, plugin: 'Geolocation', implemented: true,
+};
+
 export const NIVI_MODULES: readonly NiviModule[] = [
   VOICE_MODULE,
   { key: 'enableOcr', label: 'Lectura de listas con cámara (OCR)', pr: 3, plugin: 'Camera', implemented: false },
   { key: 'enableQr', label: 'Plantillas por QR', pr: 3, plugin: 'BarcodeScanner', implemented: false },
-  { key: 'enablePlaceSuggestions', label: 'Sugerencias de lugares', pr: 4, plugin: 'Geolocation', implemented: false },
+  PLACE_MODULE,
   { key: 'enableReminders', label: 'Recordatorios', pr: 5, plugin: 'LocalNotifications', implemented: false },
   { key: 'enableOfflineMode', label: 'Tareas sin conexión', pr: 5, plugin: null, implemented: false },
 ];
@@ -31,7 +35,12 @@ export class DeviceCapabilitiesService {
 
   /** Requires implementation, user opt-in and any necessary native plugin. */
   moduleAvailable(module: NiviModule, settings: NiviSettings): boolean {
-    return module.implemented && settings[module.key]
+    return settings[module.key] && this.supports(module);
+  }
+
+  supports(module: NiviModule): boolean {
+    return module.implemented
+      && (module.key !== 'enablePlaceSuggestions' || this.platform === 'android')
       && (!module.plugin || (this.native && Capacitor.isPluginAvailable(module.plugin)));
   }
 

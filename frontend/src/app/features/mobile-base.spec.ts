@@ -28,9 +28,11 @@ describe('mobile base screens', () => {
     vi.useFakeTimers();
     const component = fixture.componentInstance;
     component.form.patchValue({ title: task.title, estimateHours: 1 });
+    component.selectedPlaceId.set('ChIJ_test');
     component.onSubmit();
     const first = http.expectOne(path);
     const body = first.request.body;
+    expect(body.placeId).toBe('ChIJ_test');
     first.error(new ProgressEvent('error'));
     expect(component.errorMessage()).toContain('No pudimos confirmar');
     expect(component.form.disabled).toBe(true);
@@ -66,6 +68,28 @@ describe('mobile base screens', () => {
     expect(navigate).not.toHaveBeenCalled();
     retry.flush({ ...task, category: 'GENERAL' });
     expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it('omits an untouched association and sends an explicit null when it is removed', () => {
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(UpdateTaskComponent);
+    fixture.detectChanges();
+    http.expectOne(`${path}/34`).flush({ ...task, placeId: 'ChIJ_test' });
+    const component = fixture.componentInstance;
+    component.onSubmit();
+    const first = http.expectOne(`${path}/34`);
+    expect(first.request.body).not.toHaveProperty('placeId');
+    first.error(new ProgressEvent('error'));
+    component.changePlace(null);
+    component.onSubmit();
+    const removal = http.expectOne(`${path}/34`);
+    expect(removal.request.body.placeId).toBeNull();
+    removal.error(new ProgressEvent('error'));
+    component.changePlace('ChIJ_test');
+    component.onSubmit();
+    const restore = http.expectOne(`${path}/34`);
+    expect(restore.request.body.placeId).toBe('ChIJ_test');
+    restore.flush(task);
   });
 
   it('asks for confirmation before resetting corrupt preferences', async () => {
