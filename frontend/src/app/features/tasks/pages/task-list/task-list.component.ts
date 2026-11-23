@@ -12,6 +12,8 @@ import { LowerCasePipe } from '@angular/common';
 import { TaskService } from '../../data-access/task-api.service';
 import { TaskResponse, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 import { ConfirmationModalComponent } from '../../../../shared/ui/confirmation-modal/confirmation-modal.component';
+import { DeviceCapabilitiesService, VOICE_MODULE } from '../../../../core/device/device-capabilities.service';
+import { SettingsService } from '../../../../core/settings/settings.service';
 
 @Component({
   selector: 'app-task-list',
@@ -26,6 +28,10 @@ export class TaskListComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private preferences = inject(SettingsService);
+  private capabilities = inject(DeviceCapabilitiesService);
+  readonly canDictate = computed(() => this.preferences.loaded()
+    && this.capabilities.moduleAvailable(VOICE_MODULE, this.preferences.settings()));
   readonly pendingDelete = signal<TaskResponse | null>(null);
   readonly isDeleting = signal(false);
   readonly deleteError = signal<string | null>(null);

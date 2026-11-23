@@ -1,9 +1,16 @@
 <div class="task-container">
-      <div class="header-section">
+      <div class="header-section flex-wrap gap-2">
         <h2><i class="bi bi-folder-check text-mint"></i> Tareas del Proyecto</h2>
-        <a class="btn-create" [routerLink]="['/projects', projectId, 'tasks', 'new']">
-          <i class="bi bi-plus-lg"></i> Nueva Tarea
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+          @if (projectId && canDictate()) {
+            <a class="btn btn-outline-secondary align-content-center" [routerLink]="['/projects', projectId, 'tasks', 'voice']">
+              <i class="bi bi-mic" aria-hidden="true"></i> Dictar tarea
+            </a>
+          }
+          <a class="btn-create" [routerLink]="['/projects', projectId, 'tasks', 'new']">
+            <i class="bi bi-plus-lg"></i> Nueva Tarea
+          </a>
+        </div>
       </div>
 
       <!-- Dashboard de Progreso -->

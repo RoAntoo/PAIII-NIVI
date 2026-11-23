@@ -210,14 +210,15 @@ describe('mobile base screens', () => {
     expect(component.errorMessage()).not.toBeNull();
   });
 
-  it('renders six future-module switches and restores a switch after a storage error', async () => {
+  it('renders six module switches and restores a switch after a storage error', async () => {
     vi.spyOn(TestBed.inject(SETTINGS_STORAGE), 'set').mockRejectedValue(new Error('Storage unavailable'));
     const fixture = TestBed.createComponent(SettingsComponent);
     const preferences = TestBed.inject(SettingsService);
     await preferences.ready;
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('[role=switch]')).toHaveLength(6);
-    expect(fixture.nativeElement.textContent).toContain('Disponible después de implementar PR 02');
+    expect(fixture.nativeElement.querySelector('#enableVoice-status').textContent).toContain('manualmente');
+    expect(fixture.nativeElement.textContent).toContain('Disponible después de implementar PR 03');
     const voice = fixture.nativeElement.querySelector('#enableVoice') as HTMLInputElement;
     voice.checked = false;
     await fixture.componentInstance.change('enableVoice', { target: voice } as unknown as Event);

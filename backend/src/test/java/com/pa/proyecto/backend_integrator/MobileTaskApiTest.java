@@ -2,6 +2,8 @@ package com.pa.proyecto.backend_integrator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -55,17 +57,19 @@ class MobileTaskApiTest {
         mvc.perform(get(p)).andExpect(jsonPath("$.totalTasks").value(0));
     }
 
-    @Test void metadataAndExistingFieldsSurviveRoundTripAndPartialUpdate() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"OCR", "VOZ"})
+    void metadataAndExistingFieldsSurviveRoundTripAndPartialUpdate(String source) throws Exception {
         String clientId = java.util.UUID.randomUUID().toString();
-        String p = project(), t = task(p, ",\"source\":\"OCR\",\"category\":\"COMPRAS\",\"clientRequestId\":\"" + clientId + "\"");
+        String p = project(), t = task(p, ",\"source\":\"" + source + "\",\"category\":\"COMPRAS\",\"clientRequestId\":\"" + clientId + "\"");
         String before = mvc.perform(get(t)).andReturn().getResponse().getContentAsString();
         mvc.perform(put(t).contentType("application/json").content("{\"title\":\"Comprar clavos\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("OCR"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.source").value(source))
                 .andExpect(jsonPath("$.category").value("COMPRAS"))
                 .andExpect(jsonPath("$.clientRequestId").value(clientId))
                 .andExpect(jsonPath("$.estimateHours").value(2)).andExpect(jsonPath("$.assignee").value("Ana"))
                 .andExpect(jsonPath("$.createdAt").value(json.readTree(before).get("createdAt").asText()));
-        mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$[0].source").value("OCR"));
+        mvc.perform(get(p + "/tasks")).andExpect(jsonPath("$[0].source").value(source));
         mvc.perform(get("/projects/recent-tasks")).andExpect(jsonPath("$[0].task.category").value("COMPRAS"));
     }
 
