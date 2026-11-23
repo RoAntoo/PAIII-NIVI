@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { NiviSettings } from '../settings/settings.service';
+import { VOICE_PLUGIN_NAME } from './speech.service';
 
 export interface NiviModule {
   key: keyof NiviSettings;
@@ -10,8 +11,12 @@ export interface NiviModule {
   implemented: boolean;
 }
 
+export const VOICE_MODULE: NiviModule = {
+  key: 'enableVoice', label: 'Dictado por voz', pr: 2, plugin: VOICE_PLUGIN_NAME, implemented: true,
+};
+
 export const NIVI_MODULES: readonly NiviModule[] = [
-  { key: 'enableVoice', label: 'Dictado por voz', pr: 2, plugin: 'SpeechRecognition', implemented: false },
+  VOICE_MODULE,
   { key: 'enableOcr', label: 'Lectura de listas con cámara (OCR)', pr: 3, plugin: 'Camera', implemented: false },
   { key: 'enableQr', label: 'Plantillas por QR', pr: 3, plugin: 'BarcodeScanner', implemented: false },
   { key: 'enablePlaceSuggestions', label: 'Sugerencias de lugares', pr: 4, plugin: 'Geolocation', implemented: false },

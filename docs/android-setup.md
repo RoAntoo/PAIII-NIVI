@@ -64,7 +64,17 @@ npm run android:sync
 
 El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada; su ejecución de release aún no se validó. Este PR no configura firma release ni Play Store.
 
-Único permiso declarado: `INTERNET`. Preferences usa SharedPreferences sin permisos de ejecución. No se piden cámara, micrófono, ubicación ni notificaciones al iniciar. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
+Android declara `INTERNET` y `RECORD_AUDIO`. NIVI pide acceso al micrófono al iniciar un dictado. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
+
+## Dictado por voz (PR 02)
+
+Desde el listado de tareas de un proyecto, abrí **Dictar tarea**. El dictado usa un plugin local de Capacitor 8 conectado al reconocedor de Android. El servicio instalado en el dispositivo puede enviar audio a sus servidores y requerir conexión. NIVI no guarda grabaciones. El flujo empieza en español de Argentina. Si el servicio rechaza ese idioma, ofrece volver a dictar con español de España.
+
+- [ ] En un celular físico con servicio de voz habilitado, dictar «Comprar tornillos», revisar el título y guardar. Verificar que aparece en el listado.
+- [ ] Dictar una secuencia enumerada, editar los títulos y guardar varias tareas. Probar «Comprar pan y leche» como una sola tarea.
+- [ ] Denegar el permiso, comprobar **Escribir tarea** y volver a habilitar el micrófono desde los permisos de Android.
+- [ ] Probar silencio, cancelar una sesión y salir de la pantalla mientras escucha. Verificar que se libera el micrófono y que el dictado cancelado no genera tareas.
+- [ ] Desactivar voz en Ajustes y comprobar que **Nueva Tarea** sigue disponible. Registrar modelo, versión de Android y evidencia.
 
 ## Verificación y registro de dispositivo
 
