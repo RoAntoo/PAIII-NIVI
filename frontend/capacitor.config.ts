@@ -5,7 +5,11 @@ const config: CapacitorConfig = {
   appName: 'NIVI',
   webDir: 'dist/frontend-tareas-proyectos/browser',
   server: { androidScheme: 'https' },
-  android: { allowMixedContent: process.env['NIVI_ALLOW_HTTP'] === 'true' },
+  android: {
+    allowMixedContent: process.env['NIVI_ALLOW_HTTP'] === 'true',
+    // Capacitor debug logging prints native plugin payloads, including locations.
+    loggingBehavior: 'none',
+  },
 };
 
 export default config;

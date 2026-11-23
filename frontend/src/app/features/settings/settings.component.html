@@ -27,6 +27,9 @@
         <p class="small mb-0 mt-1" [id]="module.key + '-status'">
           {{ capabilities.status(module, preferences.settings()) }}
         </p>
+        @if (module.key === 'enablePlaceSuggestions') {
+          <a class="small" href="lugares-politicas.html">Condiciones de uso y privacidad de lugares</a>
+        }
       </div>
     }
   </fieldset>

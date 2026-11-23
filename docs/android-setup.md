@@ -1,6 +1,6 @@
 # Android — NIVI
 
-El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1 están fijados en package-lock.json. App ID: `ar.edu.nivi.app`; nombre: **NIVI**; contenido web empaquetado, sin servidor de live reload.
+El proyecto usa Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0, Preferences 8.0.1 y Geolocation 8.2.5 están fijados en `package-lock.json`. El APK empaqueta el contenido web de **NIVI** con el identificador `ar.edu.nivi.app`.
 
 ## Requisitos
 
@@ -10,7 +10,7 @@ El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Pr
 - Gradle Wrapper 9.6.0 incluido. Su primera ejecución y la descarga de dependencias requieren internet.
 - Backend Java 21 y H2 con las variables de autenticación del README configuradas. `.env.example` es referencia: no se carga automáticamente.
 
-La configuración del proyecto Android está en `frontend/android/variables.gradle` y `gradle/wrapper/gradle-wrapper.properties`.
+La configuración del proyecto Android está en `frontend/android/variables.gradle` y `frontend/android/gradle/wrapper/gradle-wrapper.properties`.
 
 ## Backend y conectividad
 
@@ -64,7 +64,7 @@ npm run android:sync
 
 El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada; su ejecución de release aún no se validó. Este PR no configura firma release ni Play Store.
 
-Android declara `INTERNET`, `RECORD_AUDIO` y `CAMERA`. NIVI pide acceso al micrófono al iniciar un dictado y a la cámara al tomar una foto o escanear un QR. Elegir una foto de la galería usa el selector del sistema. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
+Android declara `INTERNET`, `RECORD_AUDIO`, `CAMERA` y `ACCESS_COARSE_LOCATION`. NIVI pide acceso al micrófono al iniciar un dictado, a la cámara al tomar una foto o escanear un QR y permiso de ubicación aproximada al pulsar **Buscar cerca**. Elegir una foto de la galería usa el selector del sistema. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
 
 ## Dictado por voz (PR 02)
 
@@ -92,6 +92,8 @@ En un emulador Pixel 8 con Android 17 se verificó el guardado contra un backend
 - [ ] Cancelar la captura y la revisión. Desactivar OCR y QR por separado en Ajustes y comprobar que el otro acceso sigue disponible.
 
 ## Verificación y registro de dispositivo
+
+Para validar ubicación y búsqueda con Google Places, consultá [PR 04 · Sugerencias de lugares cercanos](pr04-lugares.md).
 
 Antes de ejecutar este bloque, volvé a la **raíz del repositorio**: los pasos anteriores dejan la terminal en `frontend/`. Desde allí, usá `Set-Location ..`. Los comandos siguientes usan rutas relativas a la raíz.
 

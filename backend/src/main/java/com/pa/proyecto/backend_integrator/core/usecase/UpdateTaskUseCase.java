@@ -4,6 +4,7 @@ import com.pa.proyecto.backend_integrator.core.exception.ResourceNotFoundExcepti
 import com.pa.proyecto.backend_integrator.core.exception.BusinessRuleViolationException;
 import com.pa.proyecto.backend_integrator.core.input.IUpdateTaskInput;
 import com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO;
+import com.pa.proyecto.backend_integrator.core.model.PlaceIds;
 import com.pa.proyecto.backend_integrator.core.model.Task;
 import com.pa.proyecto.backend_integrator.core.model.TextRules;
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
@@ -34,6 +35,7 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
         }
         String title = dto.title() == null ? null : TextRules.required(dto.title(), "Task title");
         TextRules.optional(dto.assignee(), "Task assignee");
+        PlaceIds.validateOptional(dto.placeId());
         if (dto.estimateHours() != null && dto.estimateHours() <= 0) {
             throw new IllegalArgumentException("Estimate hours must be greater than 0");
         }
@@ -48,6 +50,7 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
         if (dto.hasAssignee()) {
             existingTask.setAssignee(dto.assignee());
         }
+        if (dto.hasPlaceId()) existingTask.setPlaceId(dto.placeId());
 
         return taskRepository.save(existingTask);
     }

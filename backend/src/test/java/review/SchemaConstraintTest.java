@@ -46,6 +46,7 @@ class SchemaConstraintTest {
         assertEquals("MANUAL", jdbc.queryForObject("select source from tasks where id=500", String.class));
         assertEquals("GENERAL", jdbc.queryForObject("select category from tasks where id=500", String.class));
         assertNull(jdbc.queryForObject("select client_request_id from tasks where id=500", java.util.UUID.class));
+        assertNull(jdbc.queryForObject("select place_id from tasks where id=500", String.class));
     }
     @Test void legacyCompletedTasksAreNormalizedWithoutLosingTheirTimestamp() {
         assertEquals("DONE", jdbc.queryForObject("select status from tasks where id=500", String.class));

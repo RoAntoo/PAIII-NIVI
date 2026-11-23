@@ -4,11 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TaskService } from '../../data-access/task-api.service';
 import { TaskResponse, TaskStatus, TaskCategory, TASK_CATEGORIES, TASK_CATEGORY_LABELS } from '../../domain/task.models';
+import { TaskPlacesComponent } from '../task-places/task-places.component';
 
 @Component({
   selector: 'app-update-task',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TaskPlacesComponent],
   templateUrl: './update-task.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './update-task.component.css'
@@ -29,6 +30,8 @@ export class UpdateTaskComponent implements OnInit {
   isSaving = signal(false);
   errorMessage = signal<string | null>(null);
   task = signal<TaskResponse | null>(null);
+  readonly selectedPlaceId = signal<string | null>(null);
+  private placeChanged = false;
 
   form = this.fb.group({
     title: ['', [Validators.required, Validators.pattern(/\S+/), Validators.maxLength(255)]],
@@ -53,6 +56,8 @@ export class UpdateTaskComponent implements OnInit {
     this.taskService.getTask(this.projectId, this.taskId).subscribe({
       next: (task) => {
         this.task.set(task);
+        this.selectedPlaceId.set(task.placeId ?? null);
+        this.placeChanged = false;
         this.form.patchValue({
           title: task.title,
           estimateHours: task.estimateHours,
@@ -73,7 +78,12 @@ export class UpdateTaskComponent implements OnInit {
     });
   }
 
-  /** Saves changed or explicitly touched status/category, preserving user intent across uncertain retries. */
+  changePlace(placeId: string | null): void {
+    this.selectedPlaceId.set(placeId);
+    this.placeChanged = true;
+  }
+
+  /** Includes explicitly touched fields on retries after an uncertain save. */
   onSubmit(): void {
     if (this.isSaving() || this.form.invalid || !this.task()) { this.form.markAllAsTouched(); return; }
 
@@ -81,6 +91,7 @@ export class UpdateTaskComponent implements OnInit {
     this.errorMessage.set(null);
 
     const { title, estimateHours, assignee, status, category } = this.form.getRawValue();
+    const placeId = this.selectedPlaceId();
 
     this.taskService
       .updateTask(this.projectId, this.taskId, {
@@ -89,6 +100,7 @@ export class UpdateTaskComponent implements OnInit {
         assignee: assignee?.trim() || null,
         ...(this.form.controls.status.dirty || status !== this.task()!.status ? { status: status! } : {}),
         ...(this.form.controls.category.dirty || category !== this.task()!.category ? { category: category! } : {}),
+        ...(this.placeChanged ? { placeId } : {}),
       })
       .subscribe({
         next: () => {

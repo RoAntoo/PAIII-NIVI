@@ -1,0 +1,75 @@
+@if (placeId()) {
+  <section class="border rounded p-3 mb-3" aria-label="Lugar asociado a la tarea">
+    <p class="fw-semibold mb-2">Lugar asociado</p>
+    @if (associatedPlace(); as place) {
+      <p class="mb-1">{{ place.name }}</p>
+      @if (place.address) { <p class="small mb-1">{{ place.address }}</p> }
+      <p class="small mb-2"><span translate="no">Google Maps</span>
+        @for (item of place.attributions; track $index) {
+          · @if (item.providerUri?.startsWith('https://')) {
+            <a [href]="item.providerUri" rel="noreferrer">{{ item.provider }}</a>
+          } @else { {{ item.provider }} }
+        }
+      </p>
+      <a class="btn btn-sm btn-outline-secondary me-2" [href]="mapsUrl(place)" rel="noreferrer">Abrir en mapas</a>
+    } @else if (enabled()) {
+      <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="loadAssociatedPlace()"
+              [disabled]="disabled() || pending() !== null">{{ pending() === 'details' ? 'Consultando…' : 'Ver lugar asociado' }}</button>
+    }
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="remove()" [disabled]="disabled()">Quitar lugar</button>
+    @if (detailsError()) { <p class="text-danger small mb-0 mt-2" role="alert">{{ detailsError() }}</p> }
+  </section>
+}
+
+@if (suggestion(); as suggestion) {
+  <section class="border rounded p-3 mb-3" aria-label="Sugerencia de lugares">
+    <p class="fw-semibold mb-1">¿Buscar {{ labels[suggestion.category] }} cerca?</p>
+    @if (suggestion.confidence === 'ambiguous') {
+      <p class="small mb-1">Buscá solo si te referís a análisis clínicos.</p>
+    }
+    <p class="small mb-2">Al buscar, NIVI comparte tu ubicación aproximada y el tipo de lugar con Google Maps.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="search()" [disabled]="pending() !== null">
+        {{ searchError() || nearby() ? 'Buscar de nuevo' : 'Buscar cerca' }}
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="dismiss()">No me interesa</button>
+    </div>
+    @if (pending() === 'nearby') {
+      <p class="small mb-0 mt-2" role="status">Buscando lugares cercanos…</p>
+    }
+    @if (searchError()) { <p class="text-danger small mb-0 mt-2" role="alert">{{ searchError() }}</p> }
+    @if (nearby(); as results) {
+      @if (results.approximate) {
+        <p class="small mt-2 mb-0">La ubicación tiene poca precisión. Los lugares pueden quedar más lejos de lo esperado.</p>
+      }
+      @if (results.places.length === 0) {
+        <p class="small mb-0 mt-2" role="status">No encontramos lugares en el radio de búsqueda.</p>
+      } @else {
+        <ul class="list-group mt-3" aria-label="Lugares cercanos">
+          @for (result of results.places; track result.place.id) {
+            <li class="list-group-item">
+              <p class="fw-semibold mb-1">{{ result.place.name }}</p>
+              @if (result.place.address) { <p class="small mb-1">{{ result.place.address }}</p> }
+              @if (result.distance) { <p class="small mb-2">{{ result.distance }}</p> }
+              @for (item of result.place.attributions; track $index) {
+                <p class="small mb-1">
+                  @if (item.providerUri?.startsWith('https://')) {
+                    <a [href]="item.providerUri" rel="noreferrer">{{ item.provider }}</a>
+                  } @else { {{ item.provider }} }
+                </p>
+              }
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-secondary" [href]="mapsUrl(result.place)" rel="noreferrer">Abrir en mapas</a>
+                <button class="btn btn-sm btn-outline-primary" type="button" (click)="select(result.place)"
+                        [attr.aria-pressed]="placeId() === result.place.id">
+                  {{ placeId() === result.place.id ? 'Seleccionado' : 'Asociar a la tarea' }}
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+        <p class="small mb-0 mt-2"><span translate="no">Google Maps</span></p>
+      }
+    }
+  </section>
+}

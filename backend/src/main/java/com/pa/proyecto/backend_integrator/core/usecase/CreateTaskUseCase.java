@@ -4,6 +4,7 @@ import com.pa.proyecto.backend_integrator.core.exception.BusinessRuleViolationEx
 import com.pa.proyecto.backend_integrator.core.exception.ResourceNotFoundException;
 import com.pa.proyecto.backend_integrator.core.input.ITaskCreateInput;
 import com.pa.proyecto.backend_integrator.core.input.DTO.CreateTaskDTO;
+import com.pa.proyecto.backend_integrator.core.model.PlaceIds;
 import com.pa.proyecto.backend_integrator.core.model.Project;
 import com.pa.proyecto.backend_integrator.core.model.Task;
 import com.pa.proyecto.backend_integrator.core.model.enums.ProjectStatus;
@@ -30,6 +31,7 @@ public class CreateTaskUseCase implements ITaskCreateInput {
     /** Replays a keyed creation by returning its current task; a key never applies later edits. */
     @Override
     public Task createTask(Long projectId, CreateTaskDTO dto) {
+        PlaceIds.validateOptional(dto.placeId());
 
         if (dto.clientRequestId() != null) {
             var previous = taskRepository.findByClientRequestId(dto.clientRequestId());
@@ -62,6 +64,7 @@ public class CreateTaskUseCase implements ITaskCreateInput {
         if (dto.source() != null) task.setSource(dto.source());
         if (dto.category() != null) task.setCategory(dto.category());
         task.setClientRequestId(dto.clientRequestId());
+        task.setPlaceId(dto.placeId());
         return dto.clientRequestId() == null ? taskRepository.save(task) : taskRepository.createOnce(task);
     }
 }

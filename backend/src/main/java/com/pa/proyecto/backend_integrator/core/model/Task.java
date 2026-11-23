@@ -25,6 +25,7 @@ public class Task {
     private TaskSource source = TaskSource.MANUAL;
     private TaskCategory category = TaskCategory.GENERAL;
     private java.util.UUID clientRequestId;
+    private String placeId;
 
     private LocalDateTime finishedAt;
     private LocalDateTime createdAt;

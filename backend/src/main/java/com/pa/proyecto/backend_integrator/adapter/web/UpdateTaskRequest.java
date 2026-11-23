@@ -2,12 +2,14 @@ package com.pa.proyecto.backend_integrator.adapter.web;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 
-/** Partial task update; presence of assignee distinguishes omission from explicit null. */
+/** Partial update that distinguishes omitted fields from explicit removal. */
 public final class UpdateTaskRequest {
     private String title;
     private Integer estimateHours;
     private String assignee;
     private boolean assigneePresent;
+    private String placeId;
+    private boolean placeIdPresent;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
 
@@ -61,12 +63,19 @@ public final class UpdateTaskRequest {
         this.assignee = assignee;
         this.assigneePresent = true;
     }
-    /** Maps only supplied update fields, preserving explicit assignee null. */
+    @JsonSetter("placeId")
+    public void setPlaceId(String placeId) {
+        this.placeId = placeId;
+        this.placeIdPresent = true;
+    }
+
+    /** Maps supplied fields, including explicit removals. */
     public com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO toCommand() {
         var command = new com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO();
         command.setTitle(title); command.setEstimateHours(estimateHours);
         command.setStatus(status); command.setCategory(category);
         if (assigneePresent) command.setAssignee(assignee);
+        if (placeIdPresent) command.setPlaceId(placeId);
         return command;
     }
 }
