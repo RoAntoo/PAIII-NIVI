@@ -1,0 +1,111 @@
+<section class="card p-3 p-sm-4 mx-auto" style="max-width: 46rem" aria-labelledby="import-title">
+  <h1 class="h2" id="import-title">{{ title }}</h1>
+  @if (!validProject) {
+    <p class="alert alert-danger" role="alert">No se especificó un proyecto válido.</p>
+    <a routerLink="/projects">Volver a proyectos</a>
+  } @else {
+    @if (preferencesLoading()) {
+      <p role="status">Cargando ajustes…</p>
+    } @else if (!available()) {
+      <p role="status">{{ unavailableMessage() }}</p>
+      <a routerLink="/settings">Abrir Ajustes</a>
+    } @else {
+      @if (isQr) {
+        <p>Encuadrá el código de una plantilla NIVI para revisarla.</p>
+      } @else {
+        <p>Fotografiá una lista impresa o manuscrita con buena luz. NIVI lee la foto en el dispositivo.</p>
+      }
+      @if (canReplace()) {
+        <div class="d-flex flex-wrap gap-2">
+          @if (isQr) {
+            <button class="btn btn-primary" type="button" (click)="read()">
+              {{ reviewed() ? 'Escanear otro QR' : 'Escanear QR' }}
+            </button>
+          } @else {
+            <button class="btn btn-primary" type="button" (click)="read('camera')">
+              {{ reviewed() ? 'Tomar otra foto' : 'Tomar foto' }}
+            </button>
+            <button class="btn btn-outline-secondary" type="button" (click)="read('gallery')">Elegir de la galería</button>
+          }
+        </div>
+      }
+      @if (importing()) {
+        <p class="mt-2" role="status">{{ isQr ? 'Esperando el código QR…' : 'Esperando o procesando la foto…' }}</p>
+      }
+      @if (importError()) {
+        <p class="alert alert-warning mt-2" role="alert">{{ importError() }}</p>
+      }
+    }
+
+    @if (reviewed()) {
+      <form class="mt-4" (submit)="$event.preventDefault(); save()" novalidate>
+        <fieldset [disabled]="saving() || importing() || !available()">
+          <legend class="h4">{{ isQr ? 'Revisar plantilla' : 'Revisar y seleccionar tareas' }}</legend>
+          @for (row of rows(); track row.id; let i = $index) {
+            <div class="border rounded p-3 mb-3">
+              @if (row.saved || retryRequest()?.clientRequestId === row.id) {
+                <p class="mb-0"><strong>{{ row.saved ? 'Guardada' : 'Guardado por confirmar' }}</strong> · {{ row.title }}</p>
+              } @else {
+                @if (!isQr) {
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" [id]="'include-' + row.id" #include
+                           [checked]="row.selected !== false" (change)="update(row, { selected: include.checked })">
+                    <label class="form-check-label" [for]="'include-' + row.id">Incluir tarea {{ i + 1 }}</label>
+                  </div>
+                }
+                <label class="form-label" [for]="'title-' + row.id">Título</label>
+                <textarea class="form-control" rows="2" required [id]="'title-' + row.id" #title
+                          [value]="row.title" (input)="update(row, { title: title.value })"></textarea>
+                @if (row.originalTitle && row.originalTitle !== row.title) {
+                  <p class="small text-muted mt-1 mb-0">Lectura original: {{ row.originalTitle }}</p>
+                }
+                <div class="row g-2 my-1">
+                  <div class="col-sm-5">
+                    <label class="form-label" [for]="'hours-' + row.id">Horas estimadas</label>
+                    <input class="form-control" type="number" min="1" max="2147483647" step="1" required
+                           [id]="'hours-' + row.id" #hours [value]="row.estimateHours ?? ''"
+                           (input)="update(row, { estimateHours: hours.value === '' ? null : hours.valueAsNumber })">
+                  </div>
+                  <div class="col-sm-7">
+                    <label class="form-label" [for]="'category-' + row.id">Categoría</label>
+                    <select class="form-select" [id]="'category-' + row.id" #category (change)="changeCategory(row, category.value)">
+                      @for (option of categories; track option) {
+                        <option [value]="option" [selected]="option === row.category">{{ categoryLabels[option] }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                @if (!isQr) {
+                  <button class="btn btn-outline-danger mt-2" type="button" (click)="remove(row)">Quitar tarea {{ i + 1 }}</button>
+                }
+              }
+            </div>
+          }
+          <div class="d-flex flex-wrap gap-2">
+            @if (!isQr) {
+              <button class="btn btn-outline-secondary" type="button" (click)="addRow()">Agregar línea</button>
+            }
+            <button class="btn btn-primary" type="submit" [disabled]="pendingCount() === 0">
+              @if (saving()) { Guardando… }
+              @else if (retryRequest()) { Reintentar guardado }
+              @else { Guardar {{ isQr ? 'plantilla' : 'tareas (' + pendingCount() + ')' }} }
+            </button>
+          </div>
+        </fieldset>
+        @if (savedCount() > 0) {
+          <p class="mt-3" role="status">Guardadas: {{ savedCount() }}. Pendientes de confirmar: {{ pendingCount() }}.</p>
+        }
+        @if (saveError()) {
+          <p class="alert alert-warning mt-3" role="alert">{{ saveError() }}</p>
+        }
+      </form>
+    }
+
+    @if (!saving()) {
+      <nav class="d-flex flex-wrap gap-3 mt-3" aria-label="Opciones de tareas">
+        <a [routerLink]="['/projects', projectId, 'tasks']">{{ reviewed() && !savedCount() && !retryRequest() ? 'Cancelar revisión' : 'Volver a tareas' }}</a>
+        <a [routerLink]="['/projects', projectId, 'tasks', 'new']">Escribir tarea</a>
+      </nav>
+    }
+  }
+</section>

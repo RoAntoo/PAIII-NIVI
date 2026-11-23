@@ -1,4 +1,4 @@
-# Android — NIVI PR 01
+# Android — NIVI
 
 El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Preferences 8.0.1 están fijados en package-lock.json. App ID: `ar.edu.nivi.app`; nombre: **NIVI**; contenido web empaquetado, sin servidor de live reload.
 
@@ -10,7 +10,7 @@ El proyecto conserva Angular 21 + Ionic 9. Capacitor core/CLI/Android 8.6.0 y Pr
 - Gradle Wrapper 9.6.0 incluido. Su primera ejecución y la descarga de dependencias requieren internet.
 - Backend Java 21 y H2 con las variables de autenticación del README configuradas. `.env.example` es referencia: no se carga automáticamente.
 
-La configuración concreta del template instalado está en `frontend/android/variables.gradle` y `gradle/wrapper/gradle-wrapper.properties`. No instalar plugins de los PR siguientes todavía.
+La configuración del proyecto Android está en `frontend/android/variables.gradle` y `gradle/wrapper/gradle-wrapper.properties`.
 
 ## Backend y conectividad
 
@@ -64,7 +64,7 @@ npm run android:sync
 
 El manifiesto principal rechaza tráfico HTTP. Un manifiesto exclusivo de **debug** permite HTTP; `NIVI_ALLOW_HTTP=true` también habilita contenido mixto en el WebView de desarrollo. `preReleaseBuild` rechaza bundles con HTTP o contenido mixto habilitado. Esta protección está implementada; su ejecución de release aún no se validó. Este PR no configura firma release ni Play Store.
 
-Android declara `INTERNET` y `RECORD_AUDIO`. NIVI pide acceso al micrófono al iniciar un dictado. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
+Android declara `INTERNET`, `RECORD_AUDIO` y `CAMERA`. NIVI pide acceso al micrófono al iniciar un dictado y a la cámara al tomar una foto o escanear un QR. Elegir una foto de la galería usa el selector del sistema. Preferences usa SharedPreferences sin permisos de ejecución. El backup Android está desactivado. Preferencias y datos no sincronizados pueden perderse al desinstalar.
 
 ## Dictado por voz (PR 02)
 
@@ -75,6 +75,21 @@ Desde el listado de tareas de un proyecto, abrí **Dictar tarea**. El dictado us
 - [ ] Denegar el permiso, comprobar **Escribir tarea** y volver a habilitar el micrófono desde los permisos de Android.
 - [ ] Probar silencio, cancelar una sesión y salir de la pantalla mientras escucha. Verificar que se libera el micrófono y que el dictado cancelado no genera tareas.
 - [ ] Desactivar voz en Ajustes y comprobar que **Nueva Tarea** sigue disponible. Registrar modelo, versión de Android y evidencia.
+
+## Fotos y plantillas QR (PR 03)
+
+Desde el listado del proyecto, **Escanear lista (OCR)** permite tomar una foto o abrir la galería. Acepta JPEG, PNG y WebP de hasta 20 MiB, 12 000 píxeles por lado y 80 megapíxeles. Las fotos se procesan en el teléfono con ML Kit Text Recognition v2. La copia privada se elimina al terminar o cancelar. Si Android cierra el proceso abruptamente, se eliminan los restos de más de una hora al volver a importar. El archivo original de la galería permanece en su ubicación. La evaluación y los límites observados están en [Evaluación de OCR](ocr-evaluation.md).
+
+**Escanear QR** abre la cámara para leer plantillas de NIVI. Para probarlo, mostrar en otra pantalla el [QR de ejemplo](fixtures/nivi-task-v1.png). Su contenido usa `nivi-task:v1:` seguido de JSON UTF-8 codificado en Base64 URL sin relleno, con un máximo de 1024 caracteres para el código completo. El JSON acepta `title` obligatorio, `category` y `estimateHours` opcionales. Los dos últimos usan `GENERAL` y 1 hora si están ausentes.
+
+La captura usa la cámara y la galería del sistema Android. ZXing Embedded mantiene el mínimo API 24 del proyecto. El plugin oficial de código de barras pide API 26. [Guía de captura de Android](https://developer.android.com/media/camera/camera-intents), [ZXing Embedded](https://github.com/journeyapps/zxing-android-embedded), [plugin Barcode Scanner de Capacitor](https://capacitorjs.com/docs/apis/barcode-scanner).
+
+En un emulador Pixel 8 con Android 17 se verificó el guardado contra un backend H2 de prueba. El flujo de galería leyó tres renglones manuscritos y guardó dos después de corregir un título y desmarcar otro. La cámara virtual leyó el QR de ejemplo y el backend devolvió el título corregido, la categoría `ESTUDIO`, dos horas y origen `QR`.
+
+- [ ] Fotografiar una lista manuscrita de cinco renglones. Corregir un título, desmarcar dos renglones y comprobar en el backend que se guardaron tres.
+- [ ] Probar una foto impresa, una borrosa y el permiso de cámara denegado. Verificar el acceso por galería y la carga manual.
+- [ ] Escanear el QR de ejemplo, editar el título y guardar. Probar también un QR con una URL y comprobar que se rechaza.
+- [ ] Cancelar la captura y la revisión. Desactivar OCR y QR por separado en Ajustes y comprobar que el otro acceso sigue disponible.
 
 ## Verificación y registro de dispositivo
 

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { NiviSettings } from '../settings/settings.service';
 import { VOICE_PLUGIN_NAME } from './speech.service';
+import { TASK_IMPORT_PLUGIN_NAME } from './task-import.service';
 
 export interface NiviModule {
   key: keyof NiviSettings;
@@ -15,10 +16,18 @@ export const VOICE_MODULE: NiviModule = {
   key: 'enableVoice', label: 'Dictado por voz', pr: 2, plugin: VOICE_PLUGIN_NAME, implemented: true,
 };
 
+export const OCR_MODULE: NiviModule = {
+  key: 'enableOcr', label: 'Lectura de listas con cámara (OCR)', pr: 3, plugin: TASK_IMPORT_PLUGIN_NAME, implemented: true,
+};
+
+export const QR_MODULE: NiviModule = {
+  key: 'enableQr', label: 'Plantillas por QR', pr: 3, plugin: TASK_IMPORT_PLUGIN_NAME, implemented: true,
+};
+
 export const NIVI_MODULES: readonly NiviModule[] = [
   VOICE_MODULE,
-  { key: 'enableOcr', label: 'Lectura de listas con cámara (OCR)', pr: 3, plugin: 'Camera', implemented: false },
-  { key: 'enableQr', label: 'Plantillas por QR', pr: 3, plugin: 'BarcodeScanner', implemented: false },
+  OCR_MODULE,
+  QR_MODULE,
   { key: 'enablePlaceSuggestions', label: 'Sugerencias de lugares', pr: 4, plugin: 'Geolocation', implemented: false },
   { key: 'enableReminders', label: 'Recordatorios', pr: 5, plugin: 'LocalNotifications', implemented: false },
   { key: 'enableOfflineMode', label: 'Tareas sin conexión', pr: 5, plugin: null, implemented: false },
