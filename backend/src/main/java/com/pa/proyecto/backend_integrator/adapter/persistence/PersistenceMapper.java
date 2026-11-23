@@ -16,6 +16,9 @@ final class PersistenceMapper {
   Task t=new Task();t.setId(e.getId());t.setTitle(e.getTitle());t.setEstimateHours(e.getEstimateHours());t.setAssignee(e.getAssignee());t.setStatus(e.getStatus());t.setCreatedAt(e.getCreatedAt());t.setFinishedAt(e.getFinishedAt());t.setProject(p);
   t.setSource(e.getSource());t.setCategory(e.getCategory());t.setClientRequestId(e.getClientRequestId());
   t.setPlaceId(e.getPlaceId());
+  t.setVersion(e.getVersion());
+  t.setLastOperationId(e.getLastOperationId());
+  t.setReminderAt(e.getReminderAt());
   return t;
  }
  static void copy(Project p,ProjectEntity e) {e.setName(p.getName());e.setStartDate(p.getStartDate());e.setEndDate(p.getEndDate());e.setStatus(p.getStatus());e.setDescription(p.getDescription());}
@@ -24,5 +27,7 @@ final class PersistenceMapper {
   e.setCreatedAt(t.getCreatedAt());e.setFinishedAt(t.getFinishedAt());e.setSource(t.getSource());e.setCategory(t.getCategory());
   e.setClientRequestId(t.getClientRequestId());
   e.setPlaceId(t.getPlaceId());
+  e.setLastOperationId(t.getLastOperationId());
+  e.setReminderAt(t.getReminderAt());
  }
 }

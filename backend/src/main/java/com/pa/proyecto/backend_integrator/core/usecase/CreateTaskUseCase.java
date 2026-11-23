@@ -65,6 +65,7 @@ public class CreateTaskUseCase implements ITaskCreateInput {
         if (dto.category() != null) task.setCategory(dto.category());
         task.setClientRequestId(dto.clientRequestId());
         task.setPlaceId(dto.placeId());
+        task.setReminderAt(dto.reminderAt());
         return dto.clientRequestId() == null ? taskRepository.save(task) : taskRepository.createOnce(task);
     }
 }

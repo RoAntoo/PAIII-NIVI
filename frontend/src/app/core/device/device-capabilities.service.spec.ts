@@ -4,13 +4,12 @@ import { PLACE_MODULE } from './device-capabilities.service';
 import { DEFAULT_SETTINGS } from '../settings/settings.service';
 
 describe('device capabilities', () => {
-  it('keeps all future modules unavailable even when the preference is enabled', () => {
+  it('offers offline storage on web and keeps native reminders unavailable there', () => {
     const capabilities = TestBed.inject(DeviceCapabilitiesService);
-    for (const module of NIVI_MODULES.filter(module => module.pr > 4)) {
-      expect(module.implemented).toBe(false);
-      expect(capabilities.moduleAvailable(module, { ...DEFAULT_SETTINGS, [module.key]: true })).toBe(false);
-      expect(capabilities.status(module, DEFAULT_SETTINGS)).toContain('Disponible después de implementar');
-    }
+    const offline = NIVI_MODULES.find(module => module.key === 'enableOfflineMode')!;
+    const reminders = NIVI_MODULES.find(module => module.key === 'enableReminders')!;
+    expect(capabilities.moduleAvailable(offline, { ...DEFAULT_SETTINGS, enableOfflineMode: true })).toBe(true);
+    expect(capabilities.moduleAvailable(reminders, DEFAULT_SETTINGS)).toBe(false);
   });
 
   it('keeps location off by default and reports the manual fallback on web', () => {

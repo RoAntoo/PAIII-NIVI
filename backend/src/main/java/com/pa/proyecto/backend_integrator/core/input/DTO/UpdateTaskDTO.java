@@ -9,6 +9,18 @@ public final class UpdateTaskDTO {
     private boolean assigneePresent;
     private String placeId;
     private boolean placeIdPresent;
+    private boolean reminderAtPresent;
+    private java.time.Instant reminderAt;
+    private java.util.UUID operationId;
+
+    public boolean hasReminderAt() { return reminderAtPresent; }
+    public java.time.Instant reminderAt() { return reminderAt; }
+    public void setReminderAt(java.time.Instant value) {
+        reminderAt = value;
+        reminderAtPresent = true;
+    }
+    public java.util.UUID operationId() { return operationId; }
+    public void setOperationId(java.util.UUID value) { operationId = value; }
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
 

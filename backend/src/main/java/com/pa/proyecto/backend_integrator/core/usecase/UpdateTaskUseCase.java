@@ -51,6 +51,8 @@ public class UpdateTaskUseCase implements IUpdateTaskInput {
             existingTask.setAssignee(dto.assignee());
         }
         if (dto.hasPlaceId()) existingTask.setPlaceId(dto.placeId());
+        if (dto.hasReminderAt()) existingTask.setReminderAt(dto.reminderAt());
+        existingTask.setLastOperationId(dto.operationId());
 
         return taskRepository.save(existingTask);
     }

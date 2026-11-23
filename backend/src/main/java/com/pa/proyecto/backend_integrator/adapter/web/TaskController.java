@@ -10,6 +10,8 @@ import com.pa.proyecto.backend_integrator.core.usecase.UpdateTaskUseCase;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Objects;
+import java.util.UUID;
 
 @org.springframework.transaction.annotation.Transactional
 @RestController
@@ -36,7 +38,9 @@ public class TaskController {
 
     @DeleteMapping("/{taskId}")
     /** Deletes a task belonging to this project and returns an empty response. */
-    public ResponseEntity<Void> deleteTask(@PathVariable Long projectId, @PathVariable Long taskId) {
+    public ResponseEntity<Void> deleteTask(@PathVariable Long projectId, @PathVariable Long taskId,
+            @RequestHeader(name = "If-Match", required = false) String version) {
+        if (version != null) checkVersion(requireTask(projectId, taskId), version);
         queries.delete(projectId, taskId);
         return ResponseEntity.noContent().build();
     }
@@ -64,12 +68,27 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long projectId,
             @PathVariable Long taskId,
+            @RequestHeader(name = "If-Match", required = false) String version,
+            @RequestHeader(name = "X-Task-Operation-Id", required = false) UUID operationId,
             @RequestBody UpdateTaskRequest dto) {
 
-        requireTask(projectId, taskId);
-        Task updatedTask = updateTaskUseCase.updateTask(taskId, dto.toCommand());
+        Task currentTask = requireTask(projectId, taskId);
+        if (operationId != null && operationId.equals(currentTask.getLastOperationId())) {
+            return ResponseEntity.ok(response(currentTask));
+        }
+        checkVersion(currentTask, version);
+        var command = dto.toCommand();
+        command.setOperationId(operationId);
+        Task updatedTask = updateTaskUseCase.updateTask(taskId, command);
 
         TaskResponseDTO response = TaskResponseDTO.from(updatedTask);
         return ResponseEntity.ok(response);
+    }
+
+    private void checkVersion(Task task, String version) {
+        if (version != null && !Objects.equals(version, "\"" + task.getVersion() + "\"")) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.PRECONDITION_FAILED, "Task changed since it was loaded");
+        }
     }
 }

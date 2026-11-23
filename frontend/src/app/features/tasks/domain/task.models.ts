@@ -16,6 +16,7 @@ export interface TaskRequest {
   category?: TaskCategory;
   clientRequestId?: string;
   placeId?: string | null;
+  reminderAt?: string | null;
 }
 
 export interface TaskResponse {
@@ -31,6 +32,9 @@ export interface TaskResponse {
   category: TaskCategory;
   clientRequestId?: string | null;
   placeId?: string | null;
+  version?: number;
+  reminderAt?: string | null;
+  syncState?: 'pending' | 'error' | 'conflict';
 }
 
 /** HTTP data can predate the additive PR01 metadata. Preserve all original fields. */
@@ -50,6 +54,7 @@ export interface UpdateTaskDto {
   status?: TaskStatus;
   category?: TaskCategory;
   placeId?: string | null;
+  reminderAt?: string | null;
 }
 
 /** Rejects invalid supplied fields before sending a create or partial update. */

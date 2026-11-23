@@ -16,6 +16,12 @@ import org.springframework.web.context.request.WebRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler({org.springframework.dao.OptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class})
+    public ResponseEntity<ErrorResponse> concurrentTaskChange() {
+        return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                .body(new ErrorResponse("Precondition Failed", "Task changed since it was loaded", "TASK_CONFLICT"));
+    }
     @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
     public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

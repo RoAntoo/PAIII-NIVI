@@ -93,6 +93,8 @@ En un emulador Pixel 8 con Android 17 se verificó el guardado contra un backend
 
 ## Verificación y registro de dispositivo
 
+Los pasos del PR 05 para recordatorios, modo avión y sincronización están en [la guía de defensa](defensa.md).
+
 Para validar ubicación y búsqueda con Google Places, consultá [PR 04 · Sugerencias de lugares cercanos](pr04-lugares.md).
 
 Antes de ejecutar este bloque, volvé a la **raíz del repositorio**: los pasos anteriores dejan la terminal en `frontend/`. Desde allí, usá `Set-Location ..`. Los comandos siguientes usan rutas relativas a la raíz.

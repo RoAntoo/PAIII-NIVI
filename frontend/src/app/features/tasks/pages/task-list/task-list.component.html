@@ -106,6 +106,9 @@
                 <div class="card-content">
                   <div class="card-header-task">
                     <h3>{{ task.title }}</h3>
+                    @if (task.syncState === 'pending') { <span class="badge text-bg-secondary">Pendiente de sincronizar</span> }
+                    @if (task.syncState === 'error') { <span class="badge text-bg-danger">Error de sincronización</span> }
+                    @if (task.syncState === 'conflict') { <span class="badge text-bg-warning">Conflicto de sincronización</span> }
                     <span class="badge {{ task.status | lowercase }}">{{ task.status === 'TODO' ? 'Pendiente' : task.status === 'IN_PROGRESS' ? 'En Progreso' : 'Completada' }}</span>
                   </div>
                   <div class="task-info">

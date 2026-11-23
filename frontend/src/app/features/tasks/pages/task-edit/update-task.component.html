@@ -35,6 +35,8 @@
                              (placeIdChange)="changePlace($event)"
                              [disabled]="isSaving()" />
 
+            <app-task-reminder [at]="reminderAt()" (atChange)="changeReminder($event)" [disabled]="isSaving()" />
+
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="estimateHours" class="form-label fw-bold">Horas Estimadas</label>

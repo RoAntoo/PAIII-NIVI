@@ -26,6 +26,9 @@ public class Task {
     private TaskCategory category = TaskCategory.GENERAL;
     private java.util.UUID clientRequestId;
     private String placeId;
+    private Long version;
+    private java.util.UUID lastOperationId;
+    private java.time.Instant reminderAt;
 
     private LocalDateTime finishedAt;
     private LocalDateTime createdAt;

@@ -10,6 +10,8 @@ public final class UpdateTaskRequest {
     private boolean assigneePresent;
     private String placeId;
     private boolean placeIdPresent;
+    private boolean reminderAtPresent;
+    private java.time.Instant reminderAt;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskStatus status;
     private com.pa.proyecto.backend_integrator.core.model.enums.TaskCategory category;
 
@@ -69,6 +71,12 @@ public final class UpdateTaskRequest {
         this.placeIdPresent = true;
     }
 
+    @JsonSetter("reminderAt")
+    public void setReminderAt(java.time.Instant value) {
+        reminderAt = value;
+        reminderAtPresent = true;
+    }
+
     /** Maps supplied fields, including explicit removals. */
     public com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO toCommand() {
         var command = new com.pa.proyecto.backend_integrator.core.input.DTO.UpdateTaskDTO();
@@ -76,6 +84,7 @@ public final class UpdateTaskRequest {
         command.setStatus(status); command.setCategory(category);
         if (assigneePresent) command.setAssignee(assignee);
         if (placeIdPresent) command.setPlaceId(placeId);
+        if (reminderAtPresent) command.setReminderAt(reminderAt);
         return command;
     }
 }
