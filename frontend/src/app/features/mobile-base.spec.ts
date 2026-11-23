@@ -218,7 +218,9 @@ describe('mobile base screens', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('[role=switch]')).toHaveLength(6);
     expect(fixture.nativeElement.querySelector('#enableVoice-status').textContent).toContain('manualmente');
-    expect(fixture.nativeElement.textContent).toContain('Disponible después de implementar PR 03');
+    expect(fixture.nativeElement.querySelector('#enableOcr-status').textContent).toContain('manualmente');
+    expect(fixture.nativeElement.querySelector('#enableQr-status').textContent).toContain('manualmente');
+    expect(fixture.nativeElement.textContent).toContain('Disponible después de implementar PR 04');
     const voice = fixture.nativeElement.querySelector('#enableVoice') as HTMLInputElement;
     voice.checked = false;
     await fixture.componentInstance.change('enableVoice', { target: voice } as unknown as Event);

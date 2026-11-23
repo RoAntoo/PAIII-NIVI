@@ -7,6 +7,16 @@
               <i class="bi bi-mic" aria-hidden="true"></i> Dictar tarea
             </a>
           }
+          @if (projectId && canScanPhoto()) {
+            <a class="btn btn-outline-secondary align-content-center" [routerLink]="['/projects', projectId, 'tasks', 'ocr']">
+              <i class="bi bi-camera" aria-hidden="true"></i> Escanear lista (OCR)
+            </a>
+          }
+          @if (projectId && canScanQr()) {
+            <a class="btn btn-outline-secondary align-content-center" [routerLink]="['/projects', projectId, 'tasks', 'qr']">
+              <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Escanear QR
+            </a>
+          }
           <a class="btn-create" [routerLink]="['/projects', projectId, 'tasks', 'new']">
             <i class="bi bi-plus-lg"></i> Nueva Tarea
           </a>
