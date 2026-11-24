@@ -26,7 +26,7 @@ function emptyReminders(): Reminders {
 }
 
 type NotificationDriver = Pick<LocalNotificationsPlugin,
-  'checkPermissions' | 'requestPermissions' | 'getPending' | 'cancel' | 'schedule'>
+  'checkPermissions' | 'requestPermissions' | 'getPending' | 'getDeliveredNotifications' | 'cancel' | 'schedule'>
   & { onAction(listener: (event: ActionPerformed) => void): Promise<PluginListenerHandle> };
 
 export const REMINDER_DRIVER = new InjectionToken<NotificationDriver | null>('NIVI reminders', {
@@ -35,6 +35,7 @@ export const REMINDER_DRIVER = new InjectionToken<NotificationDriver | null>('NI
     checkPermissions: () => LocalNotifications.checkPermissions(),
     requestPermissions: () => LocalNotifications.requestPermissions(),
     getPending: () => LocalNotifications.getPending(),
+    getDeliveredNotifications: () => LocalNotifications.getDeliveredNotifications(),
     cancel: options => LocalNotifications.cancel(options),
     schedule: options => LocalNotifications.schedule(options),
     onAction: listener => LocalNotifications.addListener('localNotificationActionPerformed', listener),
@@ -123,17 +124,25 @@ export class ReminderService {
     if (!driver) return;
     const account = this.account();
     const reminders = account && this.enabled() && (await driver.checkPermissions()).display === 'granted'
-      ? await this.storage.change('reminders', emptyReminders, state =>
-        Object.values(state.accounts[this.scope(account)] ?? {}).filter(item => Date.parse(item.at) > Date.now()))
+      ? await this.storage.read('reminders', emptyReminders, state =>
+        Object.values(state.accounts[this.scope(account)] ?? {}))
       : [];
-    const desired = new Map(reminders.map(item => [item.id, item]));
-    const pending = (await driver.getPending()).notifications;
-    const cancels = pending.filter(item => !desired.has(item.id)).map(({ id }) => ({ id }));
+    const [registered, delivered] = await Promise.all([driver.getPending(), driver.getDeliveredNotifications()]);
+    // Android keeps delivered entries in the plugin registry until dismissal.
+    const deliveredIds = new Set(delivered.notifications.map(item => item.id));
+    const pendingById = new Map(registered.notifications.filter(item => !deliveredIds.has(item.id)).map(item => [item.id, item]));
+    const now = Date.now();
+    const future = reminders.filter(item => Date.parse(item.at) > now);
+    const desired = new Set(reminders.filter(item => Date.parse(item.at) > now
+      || pendingById.get(item.id)?.extra?.at === item.at || deliveredIds.has(item.id)).map(item => item.id));
+    const cancels = registered.notifications.filter(item => !desired.has(item.id)).map(({ id }) => ({ id }));
     if (cancels.length) await driver.cancel({ notifications: cancels });
 
-    const schedules = reminders.filter(item => !pending.some(current => current.id === item.id
-      && current.extra?.at === item.at && current.body === item.title));
-    if (schedules.length) {
+    const schedules = future.filter(item => {
+      const current = registered.notifications.find(notification => notification.id === item.id);
+      return current?.extra?.at !== item.at || current.body !== item.title;
+    });
+    if (schedules.length && this.account() === account && this.enabled()) {
       await driver.schedule({ notifications: schedules.map(item => ({
         id: item.id, title: 'Recordatorio de NIVI', body: item.title,
         extra: { at: item.at },
@@ -147,7 +156,7 @@ export class ReminderService {
   private async open(id: number): Promise<void> {
     const account = this.account();
     if (!account) return;
-    const target = await this.storage.change('reminders', emptyReminders, state =>
+    const target = await this.storage.read('reminders', emptyReminders, state =>
       Object.values(state.accounts[this.scope(account)] ?? {}).find(item => item.id === id));
     if (target) {
       await this.router.navigate(['/projects', target.project, 'tasks', target.task, 'edit'], {

@@ -19,6 +19,7 @@ describe('task reminders', () => {
     const driver = {
       checkPermissions: async () => ({ display: 'granted' }),
       getPending: async () => ({ notifications: [...pending.values()] }),
+      getDeliveredNotifications: async () => ({ notifications: [] }),
       schedule,
       cancel: async ({ notifications }: { notifications: { id: number }[] }) => {
         notifications.forEach(notification => pending.delete(notification.id));
@@ -33,6 +34,11 @@ describe('task reminders', () => {
     const task = { id: 1, title: 'Comprar clavos', status: 'TODO', reminderAt: '2099-01-01T10:00:00Z' };
     await reminders.observe(account, 2, 1, 'PUT', task);
     const first = [...pending.values()][0];
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse(task.reminderAt) + 1);
+    await reminders.reconcile();
+    expect(pending.has(first.id)).toBe(true);
+    expect(schedule).toHaveBeenCalledTimes(1);
+    clock.mockRestore();
     expect(first.isExactNotification).toBe(false);
     await reminders.reconcile();
     expect(schedule).toHaveBeenCalledTimes(1);

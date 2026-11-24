@@ -117,7 +117,8 @@ class MobileTaskApiTest {
         mvc.perform(put(t).header("If-Match", "\"0\"").contentType("application/json").content("{\"title\":\"Obsoleto\"}"))
                 .andExpect(status().isPreconditionFailed());
         mvc.perform(delete(t).header("If-Match", "\"0\"")).andExpect(status().isPreconditionFailed());
-        mvc.perform(get(t)).andExpect(jsonPath("$.title").value("Otra edición"));
+        mvc.perform(get(t)).andExpect(jsonPath("$.title").value("Otra edición"))
+                .andExpect(jsonPath("$.reminderAt").doesNotExist());
         mvc.perform(delete(t).header("If-Match", "\"1\"")).andExpect(status().isNoContent());
     }
 

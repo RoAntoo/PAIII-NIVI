@@ -9,6 +9,7 @@ import { ProjectListComponent } from './projects/pages/project-list/project-list
 import { HomeComponent } from './home/pages/home/home.component';
 import { routes } from '../app.routes';
 import { environment } from '../../environments/environment';
+import { of } from 'rxjs';
 
 const api = environment.apiUrl;
 const project = { id: 12, name: 'Proyecto', startDate: '2099-01-01', endDate: '2099-02-01',
@@ -17,8 +18,9 @@ const project = { id: 12, name: 'Proyecto', startDate: '2099-01-01', endDate: '2
 describe('project and task flows', () => {
   let http: HttpTestingController;
   beforeEach(() => {
+    const params = convertToParamMap({ projectId: '12', taskId: '34' });
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ projectId: '12', taskId: '34' }) } } }] });
+      { provide: ActivatedRoute, useValue: { paramMap: of(params), snapshot: { paramMap: params } } }] });
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => { http.verify(); vi.useRealTimers(); });

@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TaskService } from '../../data-access/task-api.service';
@@ -20,6 +22,9 @@ export class UpdateTaskComponent implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private taskService = inject(TaskService);
+  private readonly destroyRef = inject(DestroyRef);
+  private loadRequest?: Subscription;
+  private saveRequest?: Subscription;
 
   projectId!: number;
   taskId!: number;
@@ -34,6 +39,7 @@ export class UpdateTaskComponent implements OnInit {
   readonly selectedPlaceId = signal<string | null>(null);
   private placeChanged = false;
   readonly reminderAt = signal<string | null>(null);
+  readonly reminder = viewChild(TaskReminderComponent);
   private reminderChanged = false;
 
   form = this.fb.group({
@@ -46,9 +52,23 @@ export class UpdateTaskComponent implements OnInit {
 
   /** Resolves the project/task route and loads the editable task. */
   ngOnInit(): void {
-    this.projectId = Number(this.route.snapshot.paramMap.get('projectId'));
-    this.taskId = Number(this.route.snapshot.paramMap.get('taskId'));
-    this.loadTask();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const projectId = Number(params.get('projectId'));
+      const taskId = Number(params.get('taskId'));
+      if (projectId === this.projectId && taskId === this.taskId) return;
+      this.loadRequest?.unsubscribe();
+      this.saveRequest?.unsubscribe();
+      this.projectId = projectId;
+      this.taskId = taskId;
+      this.task.set(null);
+      this.isSaving.set(false);
+      this.selectedPlaceId.set(null);
+      this.reminderAt.set(null);
+      this.placeChanged = false;
+      this.reminderChanged = false;
+      this.form.reset({ estimateHours: 1, status: 'TODO', category: 'GENERAL' });
+      this.loadTask();
+    });
   }
 
   /** Loads the task and retains its original values for partial updates. */
@@ -56,7 +76,9 @@ export class UpdateTaskComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    this.taskService.getTask(this.projectId, this.taskId).subscribe({
+    this.loadRequest?.unsubscribe();
+    this.loadRequest = this.taskService.getTask(this.projectId, this.taskId)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (task) => {
         this.task.set(task);
         this.selectedPlaceId.set(task.placeId ?? null);
@@ -99,7 +121,10 @@ export class UpdateTaskComponent implements OnInit {
 
   /** Includes explicitly touched fields on retries after an uncertain save. */
   onSubmit(): void {
-    if (this.isSaving() || this.form.invalid || !this.task()) { this.form.markAllAsTouched(); return; }
+    if (this.isSaving() || this.form.invalid || !this.task() || this.reminder()?.checking()) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.isSaving.set(true);
     this.errorMessage.set(null);
@@ -107,7 +132,7 @@ export class UpdateTaskComponent implements OnInit {
     const { title, estimateHours, assignee, status, category } = this.form.getRawValue();
     const placeId = this.selectedPlaceId();
 
-    this.taskService
+    this.saveRequest = this.taskService
       .updateTask(this.projectId, this.taskId, {
         title: title!.trim(),
         estimateHours: estimateHours!,
@@ -117,7 +142,7 @@ export class UpdateTaskComponent implements OnInit {
         ...(this.placeChanged ? { placeId } : {}),
         ...(this.reminderChanged ? { reminderAt: this.reminderAt() } : {}),
       }, this.task()?.version)
-      .subscribe({
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.isSaving.set(false);
           this.router.navigate(['/projects', this.projectId, 'tasks']);

@@ -8,18 +8,38 @@ import { UpdateTaskComponent } from './tasks/pages/task-edit/update-task.compone
 import { SettingsComponent } from './settings/settings.component';
 import { SettingsService, SETTINGS_STORAGE } from '../core/settings/settings.service';
 import { environment } from '../../environments/environment';
+import { BehaviorSubject } from 'rxjs';
+import { ParamMap } from '@angular/router';
 
 describe('mobile base screens', () => {
   let http: HttpTestingController;
+  let params: BehaviorSubject<ParamMap>;
   const path = `${environment.apiUrl}/projects/12/tasks`;
   const task = { id: 34, title: 'Comprar tornillos', estimateHours: 1, assignee: null, status: 'TODO' };
   beforeEach(() => {
     localStorage.clear();
+    params = new BehaviorSubject(convertToParamMap({ projectId: '12', taskId: '34' }));
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ projectId: '12', taskId: '34' }) } } }] });
+      { provide: ActivatedRoute, useValue: { paramMap: params, snapshot: { paramMap: params.value } } }] });
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => { http.verify(); localStorage.clear(); vi.useRealTimers(); });
+
+  it('clears the editor and cancels old requests when the route reuses it for another task', () => {
+    const fixture = TestBed.createComponent(UpdateTaskComponent);
+    fixture.detectChanges();
+    const first = http.expectOne(path + '/34');
+    params.next(convertToParamMap({ projectId: '12', taskId: '35' }));
+    expect(first.cancelled).toBe(true);
+    http.expectOne(path + '/35').flush({ ...task, id: 35 });
+    fixture.componentInstance.onSubmit();
+    const save = http.expectOne({ url: path + '/35', method: 'PUT' });
+    params.next(convertToParamMap({ projectId: '12', taskId: '36' }));
+    expect(save.cancelled).toBe(true);
+    expect(fixture.componentInstance.task()).toBeNull();
+    expect(fixture.componentInstance.form.controls.title.value).toBeNull();
+    http.expectOne(path + '/36').flush({ ...task, id: 36, title: 'Otra tarea' });
+  });
 
   it('reuses the same creation key after status 0 even if the task list is still empty', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);

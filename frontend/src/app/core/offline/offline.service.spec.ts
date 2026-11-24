@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ProjectService } from '../../features/projects/data-access/project-api.service';
 import { TaskService } from '../../features/tasks/data-access/task-api.service';
+import { TaskDto } from '../../features/tasks/domain/task.models';
 import { AuthService } from '../auth/auth.service';
 import { ReminderService } from '../device/reminder.service';
 import { DEFAULT_SETTINGS, SettingsService } from '../settings/settings.service';
@@ -27,11 +28,12 @@ describe('offline task operations', () => {
   let tasks: TaskService;
   let offline: OfflineService;
   let http: HttpTestingController;
+  let login: object;
 
   beforeEach(() => {
     connected = true;
     account = crypto.randomUUID();
-    const login = {};
+    login = {};
     vi.spyOn(navigator, 'onLine', 'get').mockImplementation(() => connected);
     TestBed.configureTestingModule({ providers: [
       provideHttpClient(withInterceptors([offlineInterceptor])), provideHttpClientTesting(),
@@ -51,12 +53,72 @@ describe('offline task operations', () => {
     vi.restoreAllMocks();
   });
 
-  async function download(rows: typeof saved[]): Promise<void> {
+  async function download(rows: TaskDto[]): Promise<void> {
     const read = firstValueFrom(tasks.getTasksByProjectId(2));
     const request = await vi.waitFor(() => http.expectOne({ url, method: 'GET' }));
     request.flush(rows);
     await read;
   }
+
+  it('hydrates a missing task before accepting an edit, using the original version', async () => {
+    const result = firstValueFrom(tasks.updateTask(2, 7, { title: 'Editar' }, 0));
+    (await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'GET' }))).flush(saved);
+    expect(await result).toMatchObject({ syncState: 'pending' });
+    const write = await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'PUT' }));
+    expect(write.request.headers.get('If-Match')).toBe('"0"');
+    write.flush({ ...saved, title: 'Editar', version: 1 });
+    await offline.sync();
+  });
+
+  it('rejects a stale version even when it needs to fetch the task', async () => {
+    const result = firstValueFrom(tasks.deleteTask(2, 7, 0));
+    const check = expect(result).rejects.toMatchObject({ status: 412 });
+    (await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'GET' }))).flush({ ...saved, version: 1 });
+    await check;
+    http.expectNone({ url: url + '/7', method: 'DELETE' });
+  });
+
+  it('ignores a GET sent before a confirmed deletion', async () => {
+    await download([saved]);
+    const detail = firstValueFrom(tasks.getTask(2, 7));
+    const check = expect(detail).rejects.toMatchObject({ status: 404 });
+    const old = await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'GET' }));
+    await firstValueFrom(tasks.deleteTask(2, 7, 0));
+    (await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'DELETE' }))).flush(null);
+    await offline.sync();
+    old.flush(saved);
+    await check;
+  });
+
+  it('keeps the newest cached version when a delayed GET returns older data', async () => {
+    const oldRead = firstValueFrom(tasks.getTask(2, 7));
+    const old = await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'GET' }));
+    await download([{ ...saved, title: 'Última versión', version: 2 }]);
+    old.flush(saved);
+    expect(await oldRead).toMatchObject({ version: 2, title: 'Última versión' });
+  });
+
+  it('rejects a delayed response from a prior session even for the same account', async () => {
+    const read = firstValueFrom(tasks.getTask(2, 7));
+    const check = expect(read).rejects.toThrow('La sesión cambió');
+    const old = await vi.waitFor(() => http.expectOne({ url: url + '/7', method: 'GET' }));
+    login = {};
+    old.flush(saved);
+    await check;
+    connected = false;
+    await expect(firstValueFrom(tasks.getTask(2, 7))).rejects.toThrow('todavía no está guardada');
+  });
+
+  it('lists a server-side replay as one provisional task and rejects its key in a different project', async () => {
+    await download([]);
+    connected = false;
+    const local = await firstValueFrom(tasks.createTask(2, payload));
+    await expect(firstValueFrom(tasks.createTask(3, payload))).rejects.toMatchObject({ status: 409 });
+    connected = true;
+    const read = firstValueFrom(tasks.getTasksByProjectId(2));
+    (await vi.waitFor(() => http.expectOne({ url, method: 'GET' }))).flush([saved, { ...saved, id: 8, clientRequestId: 'another-key' }]);
+    expect((await read).map(task => task.id).sort()).toEqual([local.id, 8].sort());
+  });
 
   it('persists a local creation, edit and completion across another IndexedDB connection and syncs in order', async () => {
     await download([]);

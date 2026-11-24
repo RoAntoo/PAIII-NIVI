@@ -38,7 +38,7 @@ La URL de ejemplo apunta al equipo anfitrión desde el emulador. Para un celular
 3. Denegá permiso en Android y probá programar otro aviso. Comprobá que podés guardar la tarea. Completá otra tarea con recordatorio y verificá la cancelación.
 4. Con la lista ya abierta, activá modo avión. Creá «Comprar clavos», editá otra tarea, completá una tercera y borrá una cuarta. Revisá el indicador de sincronización y comprobá que la tarea borrada queda oculta.
 5. Forzá el cierre y abrí NIVI todavía en modo avión. Verificá la cola y el contenido de la lista. Recuperá red y, si NIVI lo pide, volvé a iniciar sesión. Comprobá en el servidor que los cambios se aplicaron una sola vez y que reintentar conserva el mismo resultado.
-6. Cambiá desde otro cliente una tarea que tenga una edición pendiente en el dispositivo. Confirmá que aparece el conflicto. Revisá el listado y descartá el cambio local si querés recuperar la versión del servidor.
+6. Abrí una tarea sincronizada, desconectá el dispositivo y guardá una edición local. Con el dispositivo aún sin red, modificá esa misma tarea desde otro cliente conectado al servidor. Volvé a conectar el dispositivo y confirmá que aparece el conflicto. Revisá el listado y descartá el cambio local si querés recuperar la versión del servidor.
 7. Repetí el dictado en español, la importación de una lista con OCR/QR y la búsqueda de ferreterías o laboratorios. Verificá los controles de Ajustes, la carga manual y la salida al mapa.
 
 ## Límites y seguridad

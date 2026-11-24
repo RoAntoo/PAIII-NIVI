@@ -32,6 +32,7 @@ export class AuthService {
 
   /** Restores automatic expiration and releases its timer when the service is destroyed. */
   constructor() {
+    if (!this.rememberedAccount()) this.rememberDeviceAccount();
     this.scheduleExpiry();
     inject(DestroyRef).onDestroy(() => clearTimeout(this.expiryTimer));
   }

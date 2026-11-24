@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TaskDto, TaskRequest, UpdateTaskDto, taskFromDto } from '../../features/tasks/domain/task.models';
 
 export interface PendingOperation {
@@ -22,6 +23,7 @@ export interface TaskQueue {
   projectsLoaded: Record<number, boolean>;
   pending: PendingOperation[];
   aliases: Record<number, number>;
+  deleted?: Record<number, number>;
 }
 
 export function emptyQueue(): TaskQueue {
@@ -56,7 +58,14 @@ export function enqueue(
 ): TaskDto | null {
   const id = kind === 'create' ? (body as TaskRequest).clientRequestId ?? crypto.randomUUID() : crypto.randomUUID();
   const existing = kind === 'create' && queue.pending.find(item => item.id === id);
-  if (existing) return visibleTasks(queue, project).find(task => task.id === existing.task) ?? null;
+  if (existing) {
+    if (existing.project !== project) {
+      throw new HttpErrorResponse({
+        status: 409, error: { code: 'CREATION_KEY_CONFLICT', message: 'La clave de creación pertenece a otro proyecto.' },
+      });
+    }
+    return visibleTasks(queue, project).find(task => task.id === existing.task) ?? null;
+  }
 
   const task = taskId === undefined ? queue.nextId-- : queue.aliases[taskId] ?? taskId;
   const current = queue.tasks[task];
@@ -99,6 +108,6 @@ export function commitOperation(queue: TaskQueue, operation: PendingOperation, r
         item.explanation = 'La tarea se editó en el servidor después del alta.';
       }
     }
-  }
+  } else if (operation.kind === 'delete') (queue.deleted ??= {})[operation.task] = queue.revision + 1;
   queue.revision++;
 }

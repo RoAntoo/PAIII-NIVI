@@ -40,27 +40,58 @@ export class OfflineService {
   async handle(request: HttpRequest<unknown>, route: string, forward: () => Observable<HttpResponse<unknown>>): Promise<HttpResponse<unknown>> {
     const account = this.account();
     if (!account) return firstValueFrom(forward());
+    const session = this.auth.currentSession();
+    const assertScope = () => {
+      if (this.auth.currentSession() !== session || this.account() !== account) {
+        throw new Error('La sesión cambió mientras se procesaba la solicitud.');
+      }
+    };
     const match = taskPath.exec(route);
     const project = match ? Number(match[1]) : null;
     const taskId = match?.[2] !== undefined ? Number(match[2]) : undefined;
     if (project !== null && ['POST', 'PUT', 'DELETE'].includes(request.method)) {
       const kind = request.method === 'POST' ? 'create' : request.method === 'PUT' ? 'update' : 'delete';
+      const expected = request.headers.get('If-Match');
+      const missing = taskId !== undefined && await this.read(account, state => {
+        const target = state.aliases[taskId] ?? taskId;
+        return target > 0 && state.tasks[target]?.version === undefined && !state.deleted?.[target] ? target : undefined;
+      });
+      let downloaded: TaskDto | undefined;
+      if (missing) {
+        assertScope();
+        if (!this.auth.isAuthenticated() || !navigator.onLine) {
+          throw new HttpErrorResponse({
+            status: 0, error: { message: 'Descargá la tarea con conexión antes de modificarla sin conexión.' },
+          });
+        }
+        downloaded = await firstValueFrom(this.http.get<TaskDto>(
+          `${environment.apiUrl}/projects/${project}/tasks/${missing}`,
+          { context: new HttpContext().set(SKIP_OFFLINE, true) },
+        ).pipe(timeout(5_000)));
+      }
       const { body, target } = await this.change(account, state => {
+        assertScope();
         const target = taskId === undefined ? undefined : state.aliases[taskId] ?? taskId;
-        const expected = request.headers.get('If-Match');
-        if (expected !== null && target !== undefined && expected !== `"${state.tasks[target]?.version}"`) {
+        if (target !== undefined && state.deleted?.[target]) throw new HttpErrorResponse({ status: 404 });
+        if (downloaded && target === downloaded.id && state.tasks[target]?.version === undefined) {
+          state.tasks[target] = { ...downloaded, projectId: project };
+        }
+        const current = target === undefined ? undefined : state.tasks[target];
+        if (expected !== null && current?.version !== undefined && expected !== `"${current.version}"`) {
           throw new HttpErrorResponse({ status: 412 });
         }
         return { target, body: enqueue(state, project, taskId, kind,
           request.body as TaskRequest | UpdateTaskDto | undefined) };
       });
       await this.reminders.observe(account, project, target, request.method, body);
+      assertScope();
       void this.sync();
       return new HttpResponse({ body, status: kind === 'create' ? 201 : kind === 'delete' ? 204 : 200 });
     }
     if (request.method !== 'GET') return firstValueFrom(forward());
 
-    const cached = () => this.change(account, state => {
+    const cached = () => this.read(account, state => {
+      assertScope();
       if (project !== null) {
         const list = visibleTasks(state, project);
         return taskId === undefined ? (state.projectsLoaded[project] ? list : undefined)
@@ -88,12 +119,13 @@ export class OfflineService {
       }
       return snapshot;
     });
-    const initial = await this.change(account, state => ({
+    const initial = await this.read(account, state => ({
       revision: state.revision,
-      local: taskId !== undefined && (taskId < 0 || state.pending.some(item => item.task === taskId)),
+      local: taskId !== undefined && (taskId < 0 || !!state.deleted?.[taskId] || state.pending.some(item => item.task === taskId)),
     }));
     if (initial.local || !this.auth.isAuthenticated() || !navigator.onLine) {
       const body = await cached();
+      assertScope();
       if (body === undefined) {
         if (initial.local) throw new HttpErrorResponse({ status: 404 });
         throw new Error('Esta información todavía no está guardada en el dispositivo.');
@@ -102,7 +134,9 @@ export class OfflineService {
     }
     try {
       const response = await firstValueFrom(forward().pipe(timeout(5_000)));
+      assertScope();
       await this.change(account, state => {
+        assertScope();
         if (project === null) {
           state.snapshots[request.urlWithParams] = response.body;
           return;
@@ -110,22 +144,39 @@ export class OfflineService {
         if (state.revision !== initial.revision) return;
         const rows = (taskId === undefined ? response.body : [response.body]) as TaskDto[];
         const queued = new Set(state.pending.map(item => item.task));
+        const ids = new Set(rows.map(task => task.id));
+        const queuedCreations = new Set(state.pending.filter(item => item.project === project && item.kind === 'create')
+          .map(item => item.id));
         if (taskId === undefined) {
           for (const task of Object.values(state.tasks)) {
-            if (task.projectId === project && !queued.has(task.id)) delete state.tasks[task.id];
+            if (task.projectId === project && !queued.has(task.id) && !ids.has(task.id)) delete state.tasks[task.id];
           }
           state.projectsLoaded[project] = true;
         }
         for (const task of rows) {
-          if (!queued.has(task.id)) state.tasks[task.id] = { ...task, projectId: project };
+          if (queued.has(task.id) || state.deleted?.[task.id]
+              || (task.clientRequestId && queuedCreations.has(task.clientRequestId))) continue;
+          if ((task.version ?? -1) >= (state.tasks[task.id]?.version ?? -1)) {
+            state.tasks[task.id] = { ...task, projectId: project };
+          }
         }
       });
+      assertScope();
       if (project === null) return response;
       const body = await cached();
-      return body !== undefined ? response.clone({ body }) : response;
+      assertScope();
+      if (body !== undefined) return response.clone({ body });
+      if (taskId !== undefined && await this.read(account, state =>
+        (state.deleted?.[taskId] ?? 0) > initial.revision
+        || state.pending.some(item => item.task === taskId && item.kind === 'delete'))) {
+        throw new HttpErrorResponse({ status: 404 });
+      }
+      assertScope();
+      return response;
     } catch (error) {
       if (!transient(error)) throw error;
       const body = await cached();
+      assertScope();
       if (body === undefined) throw error;
       return new HttpResponse({ body });
     }
@@ -139,7 +190,7 @@ export class OfflineService {
       return;
     }
     try {
-      const pending = await this.change(account, state => state.pending);
+      const pending = await this.read(account, state => state.pending);
       if (account === this.account()) {
         this.summaryAccount.set(account);
         this.queueSummary.set(pending);
@@ -209,19 +260,24 @@ export class OfflineService {
     return this.storage.change(`tasks:${environment.apiUrl}:${account}`, emptyQueue, update);
   }
 
+  private read<T>(account: string, select: (state: TaskQueue) => T): Promise<T> {
+    return this.storage.read(`tasks:${environment.apiUrl}:${account}`, emptyQueue, select);
+  }
+
   private async drain(account: string): Promise<void> {
     this.problem.set('');
     const session = this.auth.currentSession();
     while (this.account() === account && navigator.onLine && this.auth.currentSession() === session && this.auth.isAuthenticated()) {
-      const operation = await this.change(account, state => {
+      const { operation, wake } = await this.read(account, state => {
+        const now = Date.now();
         const firstByTask = state.pending.filter((item, index) => state.pending.findIndex(other => other.task === item.task) === index);
-        return firstByTask.find(item => item.status === 'pending' && item.retryAt <= Date.now());
+        const pending = firstByTask.filter(item => item.status === 'pending');
+        return {
+          operation: pending.find(item => item.retryAt <= now),
+          wake: pending.reduce((next, item) => Math.min(next, item.retryAt), Infinity),
+        };
       });
       if (!operation) {
-        const wake = await this.change(account, state => state.pending.filter((item, index) =>
-          item.status === 'pending' && item.retryAt > Date.now()
-          && state.pending.findIndex(other => other.task === item.task) === index)
-          .reduce((next, item) => Math.min(next, item.retryAt), Infinity));
         if (Number.isFinite(wake)) this.retryTimer = setTimeout(() => void this.sync(), Math.max(100, wake - Date.now()));
         break;
       }

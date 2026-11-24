@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, model, signal } from '@angular/core';
 import { ReminderService } from '../../../../core/device/reminder.service';
 
 @Component({
@@ -25,6 +25,7 @@ import { ReminderService } from '../../../../core/device/reminder.service';
   `,
 })
 export class TaskReminderComponent {
+  private readonly destroyRef = inject(DestroyRef);
   readonly reminders = inject(ReminderService);
   readonly at = model<string | null>(null);
   readonly disabled = input(false);
@@ -47,9 +48,16 @@ export class TaskReminderComponent {
       field.value = this.localDate();
       return;
     }
+    const previous = this.at();
     this.checking.set(true);
     try {
-      if (await this.reminders.requestPermission()) this.at.set(date.toISOString());
+      const granted = await this.reminders.requestPermission();
+      if (this.destroyRef.destroyed) return;
+      if (date.getTime() <= Date.now()) {
+        this.at.set(previous);
+        this.message.set('La hora elegida ya pasó. Elegí otra fecha y hora.');
+        field.value = this.localDate();
+      } else if (granted) this.at.set(date.toISOString());
       else {
         this.message.set('Android bloqueó las notificaciones. Podés guardar la tarea sin este recordatorio.');
         field.value = this.localDate();

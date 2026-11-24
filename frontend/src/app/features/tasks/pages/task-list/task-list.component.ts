@@ -160,7 +160,7 @@ export class TaskListComponent implements OnInit {
           ? 'La tarea cambió. Actualizá el listado antes de eliminarla.'
           : err.status === 409
           ? 'No se pueden borrar tareas de un proyecto cerrado.'
-          : 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');
+          : err.error?.message || 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');
       },
     });
   }
