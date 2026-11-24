@@ -190,6 +190,34 @@ describe('offline task operations', () => {
     http.expectNone(projectUrl + '/recent-tasks');
   });
 
+  it('hides confirmed deletions from cached recent tasks even when the project task list was never downloaded', async () => {
+    const projectUrl = `${environment.apiUrl}/projects`;
+    const recentUrl = projectUrl + '/recent-tasks';
+    const projects = firstValueFrom(TestBed.inject(ProjectService).getProjects());
+    (await vi.waitFor(() => http.expectOne(projectUrl))).flush([{ id: 2, name: 'Proyecto' }]);
+    await projects;
+
+    const kept = {
+      task: { ...saved, id: 8, title: 'Conservar', clientRequestId: null }, projectId: 2, projectName: 'Proyecto',
+    };
+    const recent = firstValueFrom(tasks.getRecentTasks());
+    (await vi.waitFor(() => http.expectOne(recentUrl))).flush([
+      { task: saved, projectId: 2, projectName: 'Proyecto' }, kept,
+    ]);
+    await recent;
+
+    const deletion = firstValueFrom(tasks.deleteTask(2, saved.id, saved.version));
+    const detailUrl = url + '/' + saved.id;
+    (await vi.waitFor(() => http.expectOne({ url: detailUrl, method: 'GET' }))).flush(saved);
+    await deletion;
+    (await vi.waitFor(() => http.expectOne({ url: detailUrl, method: 'DELETE' }))).flush(null);
+    await offline.sync();
+
+    connected = false;
+    expect(await firstValueFrom(tasks.getRecentTasks())).toEqual([kept]);
+    http.expectNone(recentUrl);
+  });
+
   it.each([[400, 'error'], [412, 'conflict']] as const)('keeps an HTTP %s result visible as %s', async (status, state) => {
     await download([saved]);
     connected = false;

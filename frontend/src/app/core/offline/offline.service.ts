@@ -105,7 +105,8 @@ export class OfflineService {
         })));
         const remote = (snapshot ?? []) as typeof local;
         const known = new Set([...local.map(row => row.task.id), ...state.pending.map(item => item.task)]);
-        return [...local, ...remote.filter(row => !state.projectsLoaded[row.projectId] && !known.has(row.task.id))]
+        return [...local, ...remote.filter(row => !state.projectsLoaded[row.projectId]
+          && !known.has(row.task.id) && state.deleted?.[row.task.id] === undefined)]
           .sort((first, second) => second.task.createdAt.localeCompare(first.task.createdAt)).slice(0, 4);
       }
       if (route === '/projects') {
