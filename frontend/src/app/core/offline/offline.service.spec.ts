@@ -216,6 +216,33 @@ describe('offline task operations', () => {
     expect(await firstValueFrom(tasks.getRecentTasks())).toEqual([rows[1]]);
   });
 
+  it('applies local edits and deletions to recent tasks without a cached project list', async () => {
+    const projectUrl = `${environment.apiUrl}/projects`;
+    const recentUrl = projectUrl + '/recent-tasks';
+    const recent = firstValueFrom(tasks.getRecentTasks());
+    (await vi.waitFor(() => http.expectOne(recentUrl))).flush([
+      { task: saved, projectId: 2, projectName: 'Proyecto de recientes' },
+      {
+        task: { ...saved, id: 8, projectId: 3, clientRequestId: null },
+        projectId: 3, projectName: 'Otro proyecto',
+      },
+    ]);
+    await recent;
+
+    connected = false;
+    await firstValueFrom(tasks.updateTask(2, saved.id, { title: 'Edición local' }, saved.version));
+    await firstValueFrom(tasks.deleteTask(3, 8, saved.version));
+
+    expect(await firstValueFrom(tasks.getRecentTasks())).toEqual([
+      {
+        task: { ...saved, title: 'Edición local', syncState: 'pending' },
+        projectId: 2, projectName: 'Proyecto de recientes',
+      },
+    ]);
+    http.expectNone(projectUrl);
+    http.expectNone(recentUrl);
+  });
+
   it('hides confirmed deletions from cached recent tasks even when the project task list was never downloaded', async () => {
     const projectUrl = `${environment.apiUrl}/projects`;
     const recentUrl = projectUrl + '/recent-tasks';

@@ -101,11 +101,13 @@ export class OfflineService {
       }
       const snapshot = state.snapshots[request.urlWithParams];
       const projects = state.snapshots[`${environment.apiUrl}/projects`] as ProjectResponse[] | undefined;
-      if (route === recentTasksPath && projects) {
-        const local = projects.flatMap(project => visibleTasks(state, project.id).map(task => ({
+      if (route === recentTasksPath && (projects || Array.isArray(snapshot))) {
+        const remote = (snapshot ?? []) as RecentTask[];
+        const projectMetadata = projects ?? [...new Map(remote.map(({ projectId, projectName }) =>
+          [projectId, { id: projectId, name: projectName }])).values()];
+        const local = projectMetadata.flatMap(project => visibleTasks(state, project.id).map(task => ({
           task, projectId: project.id, projectName: project.name,
         })));
-        const remote = (snapshot ?? []) as RecentTask[];
         const known = new Set([...local.map(row => row.task.id), ...state.pending.map(item => item.task)]);
         return [...local, ...remote.filter(row => !state.projectsLoaded[row.projectId]
           && !known.has(row.task.id) && state.deleted?.[row.task.id] === undefined)]
