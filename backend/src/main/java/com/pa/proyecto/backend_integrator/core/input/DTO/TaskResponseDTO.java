@@ -18,12 +18,15 @@ public record TaskResponseDTO(
         TaskSource source,
         TaskCategory category,
         java.util.UUID clientRequestId,
-        String placeId
+        String placeId,
+        Long version,
+        java.time.Instant reminderAt
 ) {
     /** Maps all existing task fields and mobile metadata to the HTTP response. */
     public static TaskResponseDTO from(Task task) {
         return new TaskResponseDTO(task.getId(), task.getTitle(), task.getEstimateHours(),
                 task.getAssignee(), task.getStatus(), task.getFinishedAt(), task.getCreatedAt(),
-                task.getProject().getId(), task.getSource(), task.getCategory(), task.getClientRequestId(), task.getPlaceId());
+                task.getProject().getId(), task.getSource(), task.getCategory(), task.getClientRequestId(), task.getPlaceId(),
+                task.getVersion(), task.getReminderAt());
     }
 }

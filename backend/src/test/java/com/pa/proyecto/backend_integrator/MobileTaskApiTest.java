@@ -103,6 +103,25 @@ class MobileTaskApiTest {
                 .andExpect(jsonPath("$.title").value("Comprar clavos"));
     }
 
+    @Test void versionsPreventStaleEditsAndDeletesAndAnUpdateCanBeReplayed() throws Exception {
+        String t = task(project(), ",\"reminderAt\":\"2099-01-20T14:00:00Z\"");
+        mvc.perform(get(t)).andExpect(status().isOk()).andExpect(jsonPath("$.version").value(0))
+                .andExpect(jsonPath("$.reminderAt").value("2099-01-20T14:00:00Z"));
+        String operation = java.util.UUID.randomUUID().toString();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(put(t).header("If-Match", "\"0\"").header("X-Task-Operation-Id", operation)
+                            .contentType("application/json").content("{\"title\":\"Otra edición\",\"reminderAt\":null}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1))
+                    .andExpect(jsonPath("$.reminderAt").doesNotExist());
+        }
+        mvc.perform(put(t).header("If-Match", "\"0\"").contentType("application/json").content("{\"title\":\"Obsoleto\"}"))
+                .andExpect(status().isPreconditionFailed());
+        mvc.perform(delete(t).header("If-Match", "\"0\"")).andExpect(status().isPreconditionFailed());
+        mvc.perform(get(t)).andExpect(jsonPath("$.title").value("Otra edición"))
+                .andExpect(jsonPath("$.reminderAt").doesNotExist());
+        mvc.perform(delete(t).header("If-Match", "\"1\"")).andExpect(status().isNoContent());
+    }
+
     @Test void simultaneousCreatesWithSameKeyReturnOneTask() throws Exception {
         String p = project();
         long projectId = Long.parseLong(p.substring("/projects/".length()));

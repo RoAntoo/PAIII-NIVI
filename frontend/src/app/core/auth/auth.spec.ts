@@ -11,14 +11,26 @@ describe('authentication', () => {
   let http: HttpTestingController;
   const session = (): AuthSession => ({ accessToken: 'signed-token', tokenType: 'Bearer',
     username: 'user', expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  const accountKey = `nivi.device-account:${environment.apiUrl}`;
 
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.removeItem(accountKey);
     TestBed.configureTestingModule({ providers: [provideRouter([]),
       provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()] });
     http = TestBed.inject(HttpTestingController);
   });
-  afterEach(() => { http.verify(); sessionStorage.clear(); vi.useRealTimers(); });
+  afterEach(() => { http.verify(); sessionStorage.clear(); localStorage.removeItem(accountKey); vi.useRealTimers(); });
+
+  it('remembers a restored valid session and removes the remembered account on logout', () => {
+    sessionStorage.setItem('nivi.session', JSON.stringify(session()));
+    const auth = TestBed.inject(AuthService);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    expect(auth.deviceAccount()).toBe('user');
+    expect(localStorage.getItem(accountKey)).toBe('user');
+    auth.logout();
+    expect(localStorage.getItem(accountKey)).toBeNull();
+  });
 
   it('stores the session, authenticates API calls and clears it on logout', () => {
     const auth = TestBed.inject(AuthService);

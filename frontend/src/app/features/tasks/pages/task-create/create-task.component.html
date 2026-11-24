@@ -25,6 +25,8 @@
         <app-task-places [title]="form.controls.title.value ?? ''" [(placeId)]="selectedPlaceId"
                          [disabled]="loading() || unknownOutcome() || successMessage() !== null" />
 
+        <app-task-reminder [(at)]="reminderAt" [disabled]="loading() || unknownOutcome() || successMessage() !== null" />
+
         <div class="mb-3">
           <label for="estimateHours" class="form-label">Horas estimadas *</label>
           <input type="number" class="form-control" id="estimateHours" formControlName="estimateHours" step="1" max="2147483647"
@@ -55,7 +57,7 @@
             </select>
           </div>
         <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary" [disabled]="loading() || successMessage() !== null">
+          <button type="submit" class="btn btn-primary" [disabled]="loading() || successMessage() !== null || reminder()?.checking()">
             @if (loading()) { Guardando... } @else if (unknownOutcome()) { Comprobar guardado } @else { Crear Tarea }
           </button>
           <a class="btn btn-outline-secondary" [routerLink]="['/projects', projectId, 'tasks']">Cancelar</a>

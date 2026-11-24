@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SettingsService } from '../settings/settings.service';
 
 export interface AuthSession {
   accessToken: string;
@@ -12,18 +13,26 @@ export interface AuthSession {
 }
 
 const STORAGE_KEY = 'nivi.session';
+const DEVICE_ACCOUNT = `nivi.device-account:${environment.apiUrl}`;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private preferences = inject(SettingsService);
   private session = signal<AuthSession | null>(this.restore());
+  private rememberedAccount = signal<string | null>(this.restoreAccount());
   private expiryTimer?: ReturnType<typeof setTimeout>;
   readonly username = computed(() => this.session()?.username ?? '');
-  readonly signedIn = computed(() => this.session() !== null);
+  readonly offlineAccount = computed(() => this.preferences.loaded()
+    && this.preferences.settings().enableOfflineMode ? this.rememberedAccount() : null);
+  readonly deviceAccount = this.rememberedAccount.asReadonly();
+  readonly signedIn = computed(() => this.session() !== null || this.offlineAccount() !== null);
+  readonly hasSession = computed(() => this.session() !== null);
 
   /** Restores automatic expiration and releases its timer when the service is destroyed. */
   constructor() {
+    if (!this.rememberedAccount()) this.rememberDeviceAccount();
     this.scheduleExpiry();
     inject(DestroyRef).onDestroy(() => clearTimeout(this.expiryTimer));
   }
@@ -33,6 +42,13 @@ export class AuthService {
 
   /** Reports whether the current login has an unexpired access token. */
   isAuthenticated(): boolean { return this.accessToken() !== null; }
+
+  private rememberDeviceAccount(): void {
+    const username = this.session()?.username;
+    if (!username) return;
+    this.rememberedAccount.set(username);
+    try { localStorage.setItem(DEVICE_ACCOUNT, username); } catch { /* Local storage may be unavailable. */ }
+  }
 
   /** Returns a usable bearer token, or null for an anonymous or expired login. */
   accessToken(): string | null {
@@ -44,6 +60,9 @@ export class AuthService {
   login(credentials: { username: string; password: string }) {
     return this.http.post<AuthSession>(`${environment.apiUrl}/auth/login`, credentials).pipe(tap(session => {
       this.session.set(session);
+      this.rememberedAccount.set(null);
+      try { localStorage.removeItem(DEVICE_ACCOUNT); } catch { /* Local storage may be unavailable. */ }
+      this.rememberDeviceAccount();
       try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session)); } catch { /* Memory session still works. */ }
       this.scheduleExpiry();
     }));
@@ -51,6 +70,8 @@ export class AuthService {
 
   /** Clears the login and opens the sign-in page. */
   logout(): void {
+    this.rememberedAccount.set(null);
+    try { localStorage.removeItem(DEVICE_ACCOUNT); } catch { /* Local storage may be unavailable. */ }
     this.clear();
     void this.router.navigate(['/login']);
   }
@@ -59,9 +80,13 @@ export class AuthService {
   requireLogin(): void {
     const returnUrl = this.router.url;
     this.clear();
-    if (!returnUrl.startsWith('/login')) {
+    if (!this.offlineAccount() && !returnUrl.startsWith('/login')) {
       void this.router.navigate(['/login'], { queryParams: { returnUrl } });
     }
+  }
+
+  private restoreAccount(): string | null {
+    try { return localStorage.getItem(DEVICE_ACCOUNT); } catch { return null; }
   }
 
   /** Removes the expiry timer and both memory and browser session state. */

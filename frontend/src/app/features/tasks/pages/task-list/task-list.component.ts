@@ -6,6 +6,8 @@ import {
   computed,
   ChangeDetectionStrategy,
   ElementRef,
+  effect,
+  untracked,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LowerCasePipe } from '@angular/common';
@@ -14,6 +16,7 @@ import { TaskResponse, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 import { ConfirmationModalComponent } from '../../../../shared/ui/confirmation-modal/confirmation-modal.component';
 import { DeviceCapabilitiesService, OCR_MODULE, QR_MODULE, VOICE_MODULE } from '../../../../core/device/device-capabilities.service';
 import { SettingsService } from '../../../../core/settings/settings.service';
+import { OfflineService } from '../../../../core/offline/offline.service';
 
 @Component({
   selector: 'app-task-list',
@@ -30,6 +33,17 @@ export class TaskListComponent implements OnInit {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private preferences = inject(SettingsService);
   private capabilities = inject(DeviceCapabilitiesService);
+  private offline = inject(OfflineService);
+  private lastSyncChange = this.offline.changes();
+
+  constructor() {
+    effect(() => {
+      const change = this.offline.changes();
+      if (change === this.lastSyncChange) return;
+      this.lastSyncChange = change;
+      if (this.projectId) untracked(() => this.loadTasks(this.projectId));
+    });
+  }
   readonly canDictate = computed(() => this.preferences.loaded()
     && this.capabilities.moduleAvailable(VOICE_MODULE, this.preferences.settings()));
   readonly canScanPhoto = computed(() => this.preferences.loaded()
@@ -127,7 +141,7 @@ export class TaskListComponent implements OnInit {
     if (!task || this.isDeleting()) return;
     this.isDeleting.set(true);
     this.deleteError.set(null);
-    this.taskService.deleteTask(Number(this.projectId), task.id).subscribe({
+    this.taskService.deleteTask(Number(this.projectId), task.id, task.version).subscribe({
       next: () => {
         this.tasks.update(tasks => tasks.filter(item => item.id !== task.id));
         this.pendingDelete.set(null);
@@ -142,9 +156,11 @@ export class TaskListComponent implements OnInit {
           this.host.nativeElement.querySelector<HTMLSelectElement>('#statusFilter')?.focus();
           return;
         }
-        this.deleteError.set(err.status === 409
+        this.deleteError.set(err.status === 412
+          ? 'La tarea cambió. Actualizá el listado antes de eliminarla.'
+          : err.status === 409
           ? 'No se pueden borrar tareas de un proyecto cerrado.'
-          : 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');
+          : err.error?.message || 'No se pudo borrar la tarea. Verificá la conexión e intentá de nuevo.');
       },
     });
   }

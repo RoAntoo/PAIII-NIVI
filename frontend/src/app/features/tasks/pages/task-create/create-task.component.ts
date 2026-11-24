@@ -1,15 +1,16 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, viewChild } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TaskService } from '../../data-access/task-api.service';
 import { TaskRequest, TaskStatus, TaskCategory, TASK_CATEGORIES, TASK_CATEGORY_LABELS } from '../../domain/task.models';
 import { TimeoutError } from 'rxjs';
 import { TaskPlacesComponent } from '../task-places/task-places.component';
+import { TaskReminderComponent } from '../task-reminder/task-reminder.component';
 
 @Component({
   selector: 'app-create-task',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, TaskPlacesComponent],
+  imports: [ReactiveFormsModule, RouterLink, TaskPlacesComponent, TaskReminderComponent],
   templateUrl: './create-task.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './create-task.component.css'
@@ -28,6 +29,8 @@ export class CreateTaskComponent implements OnInit {
   successMessage = signal<string | null>(null);
   readonly unknownOutcome = signal(false);
   readonly selectedPlaceId = signal<string | null>(null);
+  readonly reminderAt = signal<string | null>(null);
+  readonly reminder = viewChild(TaskReminderComponent);
   private pendingRequest: TaskRequest | null = null;
 
   form = this.fb.group({
@@ -46,7 +49,7 @@ export class CreateTaskComponent implements OnInit {
   /** Validates and creates a task, treating a timeout as an unknown server outcome. */
   onSubmit(): void {
     this.form.markAllAsTouched();
-    if (this.loading() || this.form.invalid || this.successMessage()) return;
+    if (this.loading() || this.form.invalid || this.successMessage() || this.reminder()?.checking()) return;
 
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -62,17 +65,20 @@ export class CreateTaskComponent implements OnInit {
         source: 'MANUAL',
         clientRequestId: crypto.randomUUID(),
         ...(this.selectedPlaceId() ? { placeId: this.selectedPlaceId() } : {}),
+        ...(this.reminderAt() ? { reminderAt: this.reminderAt() } : {}),
       };
     this.form.disable();
     this.taskService
       .createTask(this.projectId, this.pendingRequest)
       .subscribe({
-        next: () => {
+        next: task => {
           this.unknownOutcome.set(false);
           this.pendingRequest = null;
           this.selectedPlaceId.set(null);
+          this.reminderAt.set(null);
           this.loading.set(false);
-          this.successMessage.set('Tarea creada exitosamente. Redirigiendo...');
+          this.successMessage.set(task.syncState ? 'Tarea guardada en el dispositivo. Pendiente de sincronizar.'
+            : 'Tarea creada exitosamente. Redirigiendo...');
           this.form.reset({ status: 'TODO', category: 'GENERAL' });
           setTimeout(() => {
             this.router.navigate(['/projects', this.projectId, 'tasks']);
@@ -87,7 +93,8 @@ export class CreateTaskComponent implements OnInit {
             this.unknownOutcome.set(false);
             this.pendingRequest = null;
             this.form.enable();
-            this.errorMessage.set('No se pueden agregar tareas a un proyecto cerrado.');
+            this.errorMessage.set(err.error?.code === 'CREATION_KEY_CONFLICT' ? err.error.message
+              : 'No se pueden agregar tareas a un proyecto cerrado.');
           } else if (err.status === 404) {
             this.unknownOutcome.set(false);
             this.pendingRequest = null;

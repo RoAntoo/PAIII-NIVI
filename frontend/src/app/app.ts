@@ -2,10 +2,11 @@ import { Component, inject } from '@angular/core';
 import { AuthService } from './core/auth/auth.service';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { IonApp, IonHeader, IonToolbar, IonContent } from '@ionic/angular';
+import { SyncStatusComponent } from './core/offline/sync-status.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLinkActive, RouterLink, IonApp, IonHeader, IonToolbar, IonContent],
+  imports: [RouterOutlet, RouterLinkActive, RouterLink, IonApp, IonHeader, IonToolbar, IonContent, SyncStatusComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

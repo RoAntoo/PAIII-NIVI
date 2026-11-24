@@ -33,8 +33,8 @@ export const NIVI_MODULES: readonly NiviModule[] = [
   OCR_MODULE,
   QR_MODULE,
   PLACE_MODULE,
-  { key: 'enableReminders', label: 'Recordatorios', pr: 5, plugin: 'LocalNotifications', implemented: false },
-  { key: 'enableOfflineMode', label: 'Tareas sin conexión', pr: 5, plugin: null, implemented: false },
+  { key: 'enableReminders', label: 'Recordatorios', pr: 5, plugin: 'LocalNotifications', implemented: true },
+  { key: 'enableOfflineMode', label: 'Tareas sin conexión', pr: 5, plugin: null, implemented: true },
 ];
 
 @Injectable({ providedIn: 'root' })

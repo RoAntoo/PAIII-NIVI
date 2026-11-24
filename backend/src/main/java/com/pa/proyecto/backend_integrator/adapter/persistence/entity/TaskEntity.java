@@ -20,5 +20,8 @@ public class TaskEntity {
  private TaskCategory category = TaskCategory.GENERAL;
  private java.util.UUID clientRequestId;
  @Column(length=PlaceIds.MAX_LENGTH) private String placeId;
+ @Version @Column(nullable=false, columnDefinition="bigint default 0") private Long version;
+ private java.util.UUID lastOperationId;
+ private java.time.Instant reminderAt;
  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="project_id",nullable=false) private ProjectEntity project;
 }

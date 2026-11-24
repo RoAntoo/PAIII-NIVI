@@ -40,16 +40,18 @@ export class TaskService {
   }
 
   /** Validates and sends only supplied changes, preserving omitted server fields. */
-  updateTask(projectId: number, taskId: number, dto: UpdateTaskDto): Observable<TaskResponse> {
+  updateTask(projectId: number, taskId: number, dto: UpdateTaskDto, expectedVersion?: number): Observable<TaskResponse> {
     return defer(() => {
       validateTaskInput(dto);
       return this.http.put<TaskDto>(`${this.baseUrl}/projects/${projectId}/tasks/${taskId}`,
-        { ...dto, ...(dto.title !== undefined ? { title: dto.title.trim() } : {}) });
+        { ...dto, ...(dto.title !== undefined ? { title: dto.title.trim() } : {}) },
+        { headers: expectedVersion === undefined ? {} : { 'If-Match': `"${expectedVersion}"` } });
     }).pipe(timeout(15000), map(taskFromDto));
   }
 
   /** Deletes a task within its project and propagates HTTP failures to the caller. */
-  deleteTask(projectId: number, taskId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/projects/${projectId}/tasks/${taskId}`).pipe(timeout(15000));
+  deleteTask(projectId: number, taskId: number, expectedVersion?: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/projects/${projectId}/tasks/${taskId}`,
+      { headers: expectedVersion === undefined ? {} : { 'If-Match': `"${expectedVersion}"` } }).pipe(timeout(15000));
   }
 }

@@ -1,0 +1,3 @@
+ALTER TABLE tasks DROP COLUMN IF EXISTS reminder_at;
+ALTER TABLE tasks DROP COLUMN IF EXISTS last_operation_id;
+ALTER TABLE tasks DROP COLUMN IF EXISTS version;
