@@ -12,6 +12,8 @@ import { PendingOperation, TaskQueue, commitOperation, emptyQueue, enqueue, visi
 
 export const SKIP_OFFLINE = new HttpContextToken(() => false);
 const taskPath = /^\/projects\/(\d+)\/tasks(?:\/(-?\d+))?$/;
+const recentTasksPath = '/projects/recent-tasks';
+type RecentTask = { task: TaskDto; projectId: number; projectName: string };
 
 @Injectable({ providedIn: 'root' })
 export class OfflineService {
@@ -99,11 +101,11 @@ export class OfflineService {
       }
       const snapshot = state.snapshots[request.urlWithParams];
       const projects = state.snapshots[`${environment.apiUrl}/projects`] as ProjectResponse[] | undefined;
-      if (route === '/projects/recent-tasks' && projects) {
+      if (route === recentTasksPath && projects) {
         const local = projects.flatMap(project => visibleTasks(state, project.id).map(task => ({
           task, projectId: project.id, projectName: project.name,
         })));
-        const remote = (snapshot ?? []) as typeof local;
+        const remote = (snapshot ?? []) as RecentTask[];
         const known = new Set([...local.map(row => row.task.id), ...state.pending.map(item => item.task)]);
         return [...local, ...remote.filter(row => !state.projectsLoaded[row.projectId]
           && !known.has(row.task.id) && state.deleted?.[row.task.id] === undefined)]
@@ -140,27 +142,23 @@ export class OfflineService {
         assertScope();
         if (project === null) {
           state.snapshots[request.urlWithParams] = response.body;
+          if (route === recentTasksPath) {
+            const recent = response.body as RecentTask[];
+            cacheTasks(state, recent.map(({ task, projectId }) => ({ ...task, projectId })));
+          }
           return;
         }
         if (state.revision !== initial.revision) return;
         const rows = (taskId === undefined ? response.body : [response.body]) as TaskDto[];
         const queued = new Set(state.pending.map(item => item.task));
         const ids = new Set(rows.map(task => task.id));
-        const queuedCreations = new Set(state.pending.filter(item => item.project === project && item.kind === 'create')
-          .map(item => item.id));
         if (taskId === undefined) {
           for (const task of Object.values(state.tasks)) {
             if (task.projectId === project && !queued.has(task.id) && !ids.has(task.id)) delete state.tasks[task.id];
           }
           state.projectsLoaded[project] = true;
         }
-        for (const task of rows) {
-          if (queued.has(task.id) || state.deleted?.[task.id]
-              || (task.clientRequestId && queuedCreations.has(task.clientRequestId))) continue;
-          if ((task.version ?? -1) >= (state.tasks[task.id]?.version ?? -1)) {
-            state.tasks[task.id] = { ...task, projectId: project };
-          }
-        }
+        cacheTasks(state, rows.map(task => ({ ...task, projectId: project })));
       });
       assertScope();
       if (project === null) return response;
@@ -335,6 +333,19 @@ export class OfflineService {
       ? this.http.delete<null>(target, { headers, context })
       : this.http.put<TaskDto>(target, operation.body, { headers, context });
     return firstValueFrom(request.pipe(timeout(8_000)));
+  }
+}
+
+function cacheTasks(state: TaskQueue, rows: TaskDto[]): void {
+  const queued = new Set(state.pending.map(item => item.task));
+  const queuedCreations = new Map(state.pending.filter(item => item.kind === 'create')
+    .map(item => [item.id, item.project]));
+  for (const task of rows) {
+    if (queued.has(task.id) || state.deleted?.[task.id] !== undefined
+        || (task.clientRequestId && queuedCreations.get(task.clientRequestId) === task.projectId)) continue;
+    if ((task.version ?? -1) >= (state.tasks[task.id]?.version ?? -1)) {
+      state.tasks[task.id] = task;
+    }
   }
 }
 

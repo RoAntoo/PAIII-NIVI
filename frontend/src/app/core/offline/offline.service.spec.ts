@@ -190,6 +190,32 @@ describe('offline task operations', () => {
     http.expectNone(projectUrl + '/recent-tasks');
   });
 
+  it('keeps a new recent task offline after downloading an older project list', async () => {
+    const projectUrl = `${environment.apiUrl}/projects`;
+    const recentUrl = projectUrl + '/recent-tasks';
+    const projects = firstValueFrom(TestBed.inject(ProjectService).getProjects());
+    (await vi.waitFor(() => http.expectOne(projectUrl))).flush([{ id: 2, name: 'Proyecto' }]);
+    await projects;
+    await download([saved]);
+
+    const newTask = { ...saved, id: 8, title: 'Nueva tarea', clientRequestId: null, createdAt: '2026-01-02T12:00:00Z' };
+    const recent = firstValueFrom(tasks.getRecentTasks());
+    const rows = [newTask, saved].map(task => ({ task, projectId: 2, projectName: 'Proyecto' }));
+    (await vi.waitFor(() => http.expectOne(recentUrl))).flush(rows);
+    await recent;
+
+    connected = false;
+    expect(await firstValueFrom(tasks.getRecentTasks())).toEqual(rows);
+    expect((await firstValueFrom(tasks.getTasksByProjectId(2))).map(task => task.id)).toEqual([7, 8]);
+    http.expectNone(recentUrl);
+    http.expectNone(url);
+
+    connected = true;
+    await download([saved]);
+    connected = false;
+    expect(await firstValueFrom(tasks.getRecentTasks())).toEqual([rows[1]]);
+  });
+
   it('hides confirmed deletions from cached recent tasks even when the project task list was never downloaded', async () => {
     const projectUrl = `${environment.apiUrl}/projects`;
     const recentUrl = projectUrl + '/recent-tasks';
@@ -206,10 +232,9 @@ describe('offline task operations', () => {
     ]);
     await recent;
 
-    const deletion = firstValueFrom(tasks.deleteTask(2, saved.id, saved.version));
+    await firstValueFrom(tasks.deleteTask(2, saved.id, saved.version));
     const detailUrl = url + '/' + saved.id;
-    (await vi.waitFor(() => http.expectOne({ url: detailUrl, method: 'GET' }))).flush(saved);
-    await deletion;
+    http.expectNone({ url: detailUrl, method: 'GET' });
     (await vi.waitFor(() => http.expectOne({ url: detailUrl, method: 'DELETE' }))).flush(null);
     await offline.sync();
 
